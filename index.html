@@ -3,1039 +3,1169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Midspan Geospatial Ltd — Your GIS Partner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Midspan Geospatial Ltd – Your GIS Partner</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --nv:#0A0F1E;--nv2:#0D1829;--bl:#2E75B6;--gd:#C8A96E;--gd2:#E8C98E;
-  --ow:#E8EFF6;--mt:#7A8FA8;--wh:#FFFFFF;--cb:#0F1928;
-  --ff:'Bebas Neue',sans-serif;--fb:'Inter',sans-serif;--fm:'Space Mono',monospace;
+:root {
+  --navy: #0A0F1E;
+  --navy-mid: #111827;
+  --navy-light: #1a2540;
+  --gold: #C8A96E;
+  --gold-light: #D4B97E;
+  --blue: #2E75B6;
+  --blue-light: #4A90D9;
+  --white: #FFFFFF;
+  --off-white: #F4F4F4;
+  --gray: #8896A8;
+  --border: rgba(200,169,110,0.2);
 }
-body{font-family:var(--fb);background:var(--nv);color:var(--ow);overflow-x:hidden;font-size:14px;line-height:1.6}
-.mono{font-family:var(--fm)}.gold{color:var(--gd)}
-a{text-decoration:none;color:inherit}ul{list-style:none}
-img{display:block;width:100%;height:100%;object-fit:cover}
 
-/* NAV */
-.nav{position:sticky;top:0;z-index:100;background:rgba(8,12,24,0.97);border-bottom:1px solid rgba(46,117,182,.18);display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.5rem;gap:1rem;flex-wrap:wrap}
-.nav-logo{font-family:var(--ff);font-size:.9rem;letter-spacing:.1em;color:var(--wh);border:1px solid rgba(200,169,110,.35);padding:.3rem .65rem;line-height:1.2;cursor:pointer}
-.nav-logo em{color:var(--gd);font-style:normal}
-.nav-tabs{display:flex;gap:.15rem;flex-wrap:wrap}
-.nav-tab{font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--mt);background:none;border:none;cursor:pointer;padding:.4rem .7rem;transition:color .2s,background .2s;border-radius:3px}
-.nav-tab:hover{color:var(--wh)}.nav-tab.active{color:var(--gd);background:rgba(200,169,110,.08)}
-.nav-cta{font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--gd);border:1px solid rgba(200,169,110,.4);padding:.4rem .8rem;cursor:pointer;background:none;transition:background .2s,color .2s;border-radius:3px}
-.nav-cta:hover{background:var(--gd);color:var(--nv)}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* PAGES */
-.page{display:none}.page.active{display:block}
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+}
 
-/* HERO */
-.hero{position:relative;min-height:88vh;display:flex;align-items:center;justify-content:center;background:url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600&q=80') center/cover;overflow:hidden}
-.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(160deg,rgba(5,8,20,.93) 0%,rgba(10,20,50,.7) 100%)}
-.hero-content{position:relative;z-index:2;text-align:center;padding:0 1.5rem;max-width:820px}
-.logo-ph{border:1px dashed rgba(200,169,110,.3);width:240px;height:120px;display:flex;align-items:center;justify-content:center;background:rgba(200,169,110,.03);margin:0 auto 1.75rem}
-.logo-ph span{font-family:var(--fm);font-size:.55rem;color:rgba(200,169,110,.5);text-align:center;letter-spacing:.08em;line-height:1.8}
-.eyebrow{font-family:var(--fm);font-size:.6rem;letter-spacing:.2em;color:var(--gd);margin-bottom:1rem;display:block}
-.hero-title{font-family:var(--ff);font-size:clamp(3.5rem,12vw,8rem);line-height:.92;color:var(--wh);letter-spacing:.02em;margin-bottom:1.25rem}
-.hero-sub{font-size:.9rem;color:var(--mt);line-height:1.75;margin-bottom:2rem}
-.hero-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
-.xhair{position:absolute;inset:0;z-index:1;pointer-events:none;display:flex;align-items:center;justify-content:center}
-.xh-h{position:absolute;height:1px;width:100%;background:rgba(200,169,110,.12)}
-.xh-v{position:absolute;width:1px;height:100%;background:rgba(200,169,110,.12)}
-.xh-c{position:absolute;width:100px;height:100px;border-radius:50%;border:1px solid rgba(200,169,110,.22);animation:pulse 3s ease-in-out infinite}
-.xh-coords{position:absolute;bottom:calc(50% - 70px);font-family:var(--fm);font-size:.55rem;color:rgba(200,169,110,.6);letter-spacing:.1em}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.08);opacity:.9}}
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,15,30,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 68px;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 3px;
+  color: var(--gold); cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+}
+.logo span { color: var(--white); }
+.nav-links { display: flex; gap: 4px; }
+.nav-links button {
+  background: none; border: none; cursor: pointer;
+  color: var(--gray); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 8px 14px;
+  border-radius: 4px; transition: all 0.2s;
+}
+.nav-links button:hover { color: var(--gold); background: rgba(200,169,110,0.08); }
+.nav-links button.active { color: var(--gold); }
+.nav-cta {
+  background: var(--gold); color: var(--navy);
+  border: none; font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 10px 22px;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+.nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
 
-/* BUTTONS */
-.btn-p{font-family:var(--fm);font-size:.65rem;letter-spacing:.12em;padding:.7rem 1.75rem;background:var(--gd);color:var(--nv);border:1px solid var(--gd);cursor:pointer;transition:background .2s,transform .2s}
-.btn-p:hover{background:var(--gd2);transform:translateY(-1px)}
-.btn-g{font-family:var(--fm);font-size:.65rem;letter-spacing:.12em;padding:.7rem 1.75rem;background:transparent;color:var(--wh);border:1px solid rgba(255,255,255,.3);cursor:pointer;transition:border-color .2s}
-.btn-g:hover{border-color:var(--wh)}
+/* ── PAGE CONTAINER ── */
+.page { display: none; }
+.page.active { display: block; }
 
-/* STAT BAR */
-.stat-bar{background:rgba(12,18,35,.98);border-top:1px solid rgba(46,117,182,.12);border-bottom:1px solid rgba(46,117,182,.12);display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
-.stat{display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.9rem 2.5rem}
-.stat-num{font-family:var(--ff);font-size:2rem;color:var(--wh)}
-.stat-lbl{font-family:var(--fm);font-size:.55rem;letter-spacing:.12em;color:var(--mt)}
-.stat-div{width:1px;height:36px;background:rgba(46,117,182,.2)}
+/* ═══════════════════════════════════════════════
+   HOME
+═══════════════════════════════════════════════ */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  background: radial-gradient(ellipse at 30% 50%, rgba(46,117,182,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(200,169,110,0.08) 0%, transparent 50%),
+              var(--navy);
+  padding: 100px 40px 60px;
+}
+/* Crosshair at Calgary */
+.crosshair {
+  position: absolute; width: 100%; height: 100%;
+  top: 0; left: 0; pointer-events: none;
+}
+.crosshair::before, .crosshair::after {
+  content: ''; position: absolute;
+  background: rgba(200,169,110,0.18);
+}
+.crosshair::before { /* horizontal */
+  width: 100%; height: 1px;
+  top: 52%; left: 0;
+}
+.crosshair::after { /* vertical */
+  width: 1px; height: 100%;
+  left: 38%; top: 0;
+}
+.ch-dot {
+  position: absolute; top: 52%; left: 38%;
+  transform: translate(-50%,-50%);
+  width: 12px; height: 12px;
+  border-radius: 50%; background: var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,169,110,0.25), 0 0 0 8px rgba(200,169,110,0.12);
+}
+.ch-coords {
+  position: absolute; top: calc(52% + 16px); left: calc(38% + 14px);
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  color: var(--gold); opacity: 0.7;
+  letter-spacing: 0.5px;
+}
+/* Grid overlay */
+.grid-overlay {
+  position: absolute; width: 100%; height: 100%;
+  top: 0; left: 0; pointer-events: none; opacity: 0.04;
+  background-image:
+    linear-gradient(var(--white) 1px, transparent 1px),
+    linear-gradient(90deg, var(--white) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.hero-content {
+  position: relative; z-index: 2; max-width: 900px; text-align: center;
+}
+.hero-pre {
+  font-family: 'Space Mono', monospace; font-size: 12px;
+  letter-spacing: 4px; color: var(--gold); text-transform: uppercase;
+  margin-bottom: 24px; opacity: 0.9;
+}
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(56px, 10vw, 110px);
+  line-height: 0.92; letter-spacing: 2px;
+  margin-bottom: 32px;
+}
+.hero-title .line2 { color: var(--gold); }
+.hero-sub {
+  font-size: 17px; line-height: 1.7; color: var(--gray);
+  max-width: 600px; margin: 0 auto 44px;
+}
+.hero-sub strong { color: var(--white); }
+.hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--gold); color: var(--navy);
+  border: none; font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; padding: 16px 36px;
+  border-radius: 3px; cursor: pointer; transition: all 0.25s;
+}
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,169,110,0.3); }
+.btn-outline {
+  background: transparent; color: var(--white);
+  border: 1px solid rgba(255,255,255,0.25);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 500; letter-spacing: 2px;
+  text-transform: uppercase; padding: 16px 36px;
+  border-radius: 3px; cursor: pointer; transition: all 0.25s;
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
-/* SECTIONS */
-.section{padding:4rem 1.5rem;max-width:1200px;margin:0 auto}
-.sec-bg{background:var(--nv2)}
-.sec-ey{font-family:var(--fm);font-size:.6rem;letter-spacing:.2em;color:var(--gd);display:block;margin-bottom:.5rem}
-.sec-title{font-family:var(--ff);font-size:clamp(2rem,5vw,3.2rem);line-height:1;color:var(--wh);letter-spacing:.02em}
+/* Stats strip */
+.stats-strip {
+  display: flex; justify-content: center; gap: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 40px; background: rgba(255,255,255,0.02);
+  flex-wrap: wrap;
+}
+.stat-item {
+  text-align: center; padding: 0 44px;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px; color: var(--gold); letter-spacing: 2px;
+}
+.stat-label {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gray); margin-top: 4px;
+}
 
-/* SERVICE CARDS */
-.svc-grid{display:grid;grid-template-columns:repeat(4,1fr)}
-.svc-card{position:relative;overflow:hidden;display:flex;align-items:flex-end;cursor:pointer;min-height:380px;background-size:cover;background-position:center;transition:transform .4s}
-.svc-card:hover{transform:scale(1.01)}
-.svc-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,8,20,.97) 0%,rgba(5,8,20,.35) 55%,rgba(5,8,20,.08) 100%);transition:opacity .3s}
-.svc-card:hover .svc-ov{opacity:.88}
-.svc-cnt{position:relative;z-index:2;padding:1.5rem 1.25rem;width:100%}
-.svc-tag{display:block;font-family:var(--fm);font-size:.55rem;letter-spacing:.18em;color:var(--gd);margin-bottom:.4rem}
-.svc-ttl{font-family:var(--ff);font-size:1.4rem;color:var(--wh);line-height:1.05;margin-bottom:.5rem;letter-spacing:.02em}
-.svc-desc{font-size:.75rem;line-height:1.6;color:var(--mt);margin-bottom:.75rem;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
-.svc-card:hover .svc-desc{opacity:1;transform:translateY(0)}
-.svc-cta{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--gd);border-bottom:1px solid rgba(200,169,110,.3);padding-bottom:.1rem}
+/* Services grid */
+.section { padding: 90px 40px; max-width: 1200px; margin: 0 auto; }
+.section-tag {
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  letter-spacing: 4px; color: var(--gold); text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 56px); letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 16px; line-height: 1.7; color: var(--gray);
+  max-width: 560px; margin-bottom: 56px;
+}
+.services-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+}
+@media(max-width:900px){ .services-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:560px){ .services-grid { grid-template-columns: 1fr; } }
+.service-card {
+  background: var(--navy-mid); padding: 40px 36px;
+  cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+}
+.service-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 3px; height: 0; background: var(--gold);
+  transition: height 0.3s;
+}
+.service-card:hover::before { height: 100%; }
+.service-card:hover { background: var(--navy-light); }
+.svc-num {
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  color: var(--gold); opacity: 0.6; margin-bottom: 24px;
+}
+.svc-icon { font-size: 32px; margin-bottom: 20px; }
+.svc-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+  letter-spacing: 1px; margin-bottom: 12px;
+}
+.svc-desc { font-size: 14px; line-height: 1.7; color: var(--gray); }
+.svc-arrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 20px; font-size: 12px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--gold);
+  font-weight: 600; opacity: 0;
+  transition: opacity 0.2s;
+}
+.service-card:hover .svc-arrow { opacity: 1; }
 
-/* INTRO GRID */
-.intro-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:4rem;align-items:start}
-.i-body{font-size:.85rem;line-height:1.85;color:var(--mt);margin-bottom:1rem}
+/* CTA band */
+.cta-band {
+  background: linear-gradient(135deg, var(--navy-light) 0%, rgba(46,117,182,0.15) 100%);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 40px; text-align: center;
+}
+.cta-band h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(32px, 5vw, 52px); letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.cta-band p { font-size: 16px; color: var(--gray); margin-bottom: 36px; }
 
-/* DIFF */
-.diff-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:4rem;align-items:center}
-.diff-body{font-size:.85rem;line-height:1.8;color:var(--mt);margin-top:1rem}
-.diff-item{display:flex;gap:1rem;align-items:flex-start;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.diff-item:last-child{border-bottom:none}
-.di-icon{color:var(--gd);font-size:1rem;flex-shrink:0;margin-top:.1rem}
-.di-title{font-size:.9rem;font-weight:600;color:var(--wh);margin-bottom:.25rem}
-.di-desc{font-size:.78rem;line-height:1.65;color:var(--mt)}
+/* ═══════════════════════════════════════════════
+   INNER PAGE HERO
+═══════════════════════════════════════════════ */
+.page-hero {
+  padding: 140px 40px 80px; max-width: 1200px; margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.page-hero .section-tag { margin-bottom: 16px; }
+.page-hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(42px, 6vw, 72px); letter-spacing: 2px;
+  margin-bottom: 20px; max-width: 700px;
+}
+.page-hero p {
+  font-size: 17px; line-height: 1.7; color: var(--gray);
+  max-width: 600px;
+}
 
-/* ENGAGE */
-.engage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:2.5rem;border:1px solid rgba(46,117,182,.12)}
-.engage-card{background:var(--cb);padding:2.25rem 1.75rem;border-right:1px solid rgba(46,117,182,.1);transition:background .3s}
-.engage-card:last-child{border-right:none}
-.engage-card:hover{background:rgba(15,30,58,.9)}
-.eng-num{display:block;font-family:var(--fm);font-size:.58rem;letter-spacing:.2em;color:var(--gd);margin-bottom:.75rem}
-.engage-card h3{font-family:var(--ff);font-size:1.5rem;color:var(--wh);margin-bottom:.75rem;letter-spacing:.02em}
-.engage-card p{font-size:.8rem;line-height:1.7;color:var(--mt)}
+/* ═══════════════════════════════════════════════
+   UTILITIES / ENVIRONMENTAL / MUNICIPAL / DRONE
+═══════════════════════════════════════════════ */
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; padding: 80px 40px; max-width: 1200px; margin: 0 auto;
+}
+@media(max-width:768px){ .detail-grid { grid-template-columns: 1fr; } }
+.detail-block h3 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+  letter-spacing: 1px; color: var(--gold); margin-bottom: 20px;
+}
+.detail-block ul { list-style: none; }
+.detail-block ul li {
+  font-size: 15px; line-height: 1.8; color: var(--gray);
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.detail-block ul li::before { content: '→'; color: var(--gold); flex-shrink: 0; }
+.tech-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.tech-tag {
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  letter-spacing: 1px; background: rgba(200,169,110,0.1);
+  color: var(--gold); border: 1px solid rgba(200,169,110,0.25);
+  padding: 6px 14px; border-radius: 3px;
+}
 
-/* CONTACT */
-.contact-wrap{position:relative;padding:5rem 1.5rem;background:url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=1600&q=80') center/cover}
-.contact-wrap::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(5,8,20,.96) 0%,rgba(10,20,55,.82) 100%)}
-.contact-inner{position:relative;z-index:2;max-width:1200px;margin:0 auto}
-.contact-sub{font-size:.85rem;color:var(--mt);max-width:500px;margin:1rem 0 2rem;line-height:1.75}
-.contact-row{display:flex;gap:2.5rem;flex-wrap:wrap;margin-bottom:2.25rem}
-.c-item{display:flex;flex-direction:column;gap:.3rem}
-.c-item .lbl{font-family:var(--fm);font-size:.55rem;letter-spacing:.15em;color:var(--gd)}
-.c-item .val{font-family:var(--fm);font-size:.78rem;color:var(--wh)}
+.case-strip {
+  background: var(--navy-mid); border-top: 1px solid var(--border);
+  padding: 80px 40px;
+}
+.case-strip .inner { max-width: 1200px; margin: 0 auto; }
+.case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 48px; }
+.case-card {
+  background: var(--navy); border: 1px solid var(--border);
+  padding: 32px; border-radius: 4px;
+}
+.case-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+.case-card p { font-size: 13px; color: var(--gray); line-height: 1.7; }
+.case-outcome {
+  margin-top: 16px; font-family: 'Space Mono', monospace;
+  font-size: 11px; color: var(--gold); letter-spacing: 1px;
+}
 
-/* PAGE HERO */
-.ph{position:relative;min-height:62vh;display:flex;align-items:flex-end;background-size:cover;background-position:center}
-.ph-ov{position:absolute;inset:0}
-.ph-cnt{position:relative;z-index:2;padding:2rem 1.5rem 3rem;max-width:1200px;width:100%;margin:0 auto}
-.ph-title{font-family:var(--ff);font-size:clamp(2.5rem,7vw,5.5rem);line-height:.93;color:var(--wh);letter-spacing:.02em;margin:.75rem 0 1rem}
-.ph-sub{font-size:.85rem;line-height:1.75;color:var(--mt);max-width:560px;margin-bottom:1.75rem}
+/* ═══════════════════════════════════════════════
+   PLATFORM PAGE
+═══════════════════════════════════════════════ */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px; margin-top: 48px;
+}
+.price-card {
+  background: var(--navy-mid); border: 1px solid var(--border);
+  padding: 40px 32px; border-radius: 4px;
+  position: relative; transition: all 0.25s;
+}
+.price-card.featured {
+  border-color: var(--gold);
+  background: linear-gradient(145deg, var(--navy-light) 0%, var(--navy-mid) 100%);
+}
+.price-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: var(--navy);
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; padding: 4px 16px; border-radius: 2px;
+}
+.price-tier {
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+  letter-spacing: 2px; color: var(--gray); margin-bottom: 8px;
+}
+.price-amount {
+  font-family: 'Bebas Neue', sans-serif; font-size: 52px;
+  color: var(--white); line-height: 1;
+}
+.price-amount span { font-size: 18px; color: var(--gray); }
+.price-features { list-style: none; margin: 28px 0; }
+.price-features li {
+  font-size: 14px; color: var(--gray); padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.price-features li::before { content: '✓'; color: var(--gold); flex-shrink: 0; font-weight: 700; }
 
-/* SVCL GRID */
-.svcl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:2.5rem;border:1px solid rgba(46,117,182,.1)}
-.svcl-card{background:var(--cb);padding:2rem 1.5rem;border-right:1px solid rgba(46,117,182,.08);border-bottom:1px solid rgba(46,117,182,.08);display:flex;flex-direction:column;transition:background .3s}
-.svcl-card:hover{background:rgba(15,32,62,.9)}
-.svcl-num{display:block;font-family:var(--fm);font-size:.58rem;letter-spacing:.2em;color:var(--gd);margin-bottom:.75rem}
-.svcl-card h3{font-family:var(--ff);font-size:1.35rem;color:var(--wh);margin-bottom:1rem;letter-spacing:.02em}
-.svcl-list{flex:1;margin-bottom:1.25rem}
-.svcl-list li{font-size:.75rem;line-height:1.55;color:var(--mt);padding:.3rem 0 .3rem .75rem;position:relative;border-bottom:1px solid rgba(255,255,255,.04)}
-.svcl-list li::before{content:'›';position:absolute;left:0;color:var(--gd);opacity:.6}
-.svcl-cta{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--gd);border-bottom:1px solid rgba(200,169,110,.3);padding-bottom:.1rem;display:inline-block;margin-top:auto;cursor:pointer}
+/* ═══════════════════════════════════════════════
+   PROJECTS PAGE
+═══════════════════════════════════════════════ */
+.filter-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding: 40px 40px 0; max-width: 1200px; margin: 0 auto;
+}
+.filter-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--gray); font-family: 'Inter', sans-serif;
+  font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 8px 18px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(200,169,110,0.08); }
+.projects-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1px; background: var(--border); margin: 40px 40px;
+  max-width: 1200px; margin-left: auto; margin-right: auto;
+  border: 1px solid var(--border);
+}
+.proj-card {
+  background: var(--navy-mid); padding: 36px 32px;
+  transition: all 0.2s;
+}
+.proj-card:hover { background: var(--navy-light); }
+.proj-cat {
+  font-family: 'Space Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; color: var(--gold); text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.proj-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.proj-card p { font-size: 13px; line-height: 1.7; color: var(--gray); margin-bottom: 16px; }
+.proj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.proj-tag {
+  font-size: 11px; background: rgba(46,117,182,0.15);
+  color: var(--blue-light); border: 1px solid rgba(46,117,182,0.25);
+  padding: 3px 10px; border-radius: 2px; font-family: 'Space Mono', monospace;
+}
+.proj-outcome { font-size: 12px; color: var(--gold); font-weight: 600; }
 
-/* SECTOR */
-.sector-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:2.5rem}
-.sector-card{background:var(--cb);padding:1.5rem;border-top:2px solid rgba(46,117,182,.18);transition:border-top-color .3s,background .3s}
-.sector-card:hover{border-top-color:var(--gd);background:rgba(15,28,52,.9)}
-.sector-icon{font-size:1.6rem;margin-bottom:.75rem}
-.sector-card h4{font-family:var(--ff);font-size:1.15rem;color:var(--wh);margin-bottom:.4rem}
-.sector-card p{font-size:.75rem;line-height:1.6;color:var(--mt)}
+/* ═══════════════════════════════════════════════
+   ABOUT PAGE
+═══════════════════════════════════════════════ */
+.about-grid {
+  display: grid; grid-template-columns: 1fr 1.4fr;
+  gap: 80px; padding: 80px 40px; max-width: 1200px; margin: 0 auto;
+  align-items: start;
+}
+@media(max-width:768px){ .about-grid { grid-template-columns: 1fr; } }
+.principal-card {
+  background: var(--navy-mid); border: 1px solid var(--border);
+  padding: 40px 32px; border-radius: 4px; position: relative;
+}
+.principal-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 3px; background: linear-gradient(90deg, var(--gold), var(--blue));
+}
+.principal-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--navy);
+  margin-bottom: 24px;
+}
+.principal-name {
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+  letter-spacing: 1px; margin-bottom: 4px;
+}
+.principal-title { font-size: 13px; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 20px; }
+.principal-bio { font-size: 14px; line-height: 1.8; color: var(--gray); margin-bottom: 24px; }
+.creds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.cred-badge {
+  font-family: 'Space Mono', monospace; font-size: 10px;
+  letter-spacing: 1px; background: rgba(200,169,110,0.1);
+  color: var(--gold); border: 1px solid rgba(200,169,110,0.3);
+  padding: 5px 12px; border-radius: 2px;
+}
+.linkedin-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: #0A66C2; color: var(--white);
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.5px; padding: 12px 22px; border-radius: 4px;
+  text-decoration: none; transition: all 0.2s;
+  border: none; cursor: pointer; width: 100%; justify-content: center;
+}
+.linkedin-btn:hover { background: #004182; transform: translateY(-1px); }
+.linkedin-btn svg { flex-shrink: 0; }
 
-/* CTA STRIP */
-.cta-strip{position:relative;padding:4.5rem 1.5rem;text-align:center;background-size:cover;background-position:center}
-.cta-strip::before{content:'';position:absolute;inset:0;background:rgba(5,8,20,.9)}
-.cta-cnt{position:relative;z-index:2}
-.cta-cnt h2{font-family:var(--ff);font-size:clamp(1.8rem,4vw,3.2rem);color:var(--wh);letter-spacing:.02em;margin-bottom:.75rem}
-.cta-cnt p{font-size:.85rem;color:var(--mt);max-width:480px;margin:0 auto 1.75rem;line-height:1.7}
+.about-content h2 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 42px;
+  letter-spacing: 1px; margin-bottom: 24px;
+}
+.about-content p {
+  font-size: 15px; line-height: 1.8; color: var(--gray);
+  margin-bottom: 20px;
+}
+.about-content p strong { color: var(--white); }
+.values-list { list-style: none; margin-top: 32px; }
+.values-list li {
+  display: flex; gap: 16px; padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.val-num {
+  font-family: 'Space Mono', monospace; font-size: 12px;
+  color: var(--gold); flex-shrink: 0; padding-top: 2px;
+}
+.val-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.val-content p { font-size: 14px; color: var(--gray); line-height: 1.7; }
 
-/* DRONE CERT BAR */
-.cert-bar{background:rgba(12,18,36,.98);border-top:1px solid rgba(200,169,110,.18);border-bottom:1px solid rgba(200,169,110,.18);display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
-.cb-item{display:flex;align-items:center;gap:.75rem;padding:1rem 1.75rem}
-.cb-badge{font-family:var(--fm);font-size:.58rem;letter-spacing:.15em;color:var(--gd);background:rgba(200,169,110,.07);border:1px solid rgba(200,169,110,.28);padding:.25rem .6rem;white-space:nowrap}
-.cb-text{font-size:.75rem;color:var(--mt);line-height:1.4;max-width:240px}
-.cb-div{width:1px;height:44px;background:rgba(200,169,110,.18)}
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer {
+  background: var(--navy-mid); border-top: 1px solid var(--border);
+  padding: 60px 40px 30px;
+}
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-top {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 48px; margin-bottom: 48px;
+}
+@media(max-width:768px){ .footer-top { grid-template-columns: 1fr; } }
+.footer-brand .logo { font-size: 20px; margin-bottom: 12px; }
+.footer-brand p { font-size: 13px; color: var(--gray); line-height: 1.7; }
+.footer-col h5 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+  letter-spacing: 2px; color: var(--gold); margin-bottom: 16px;
+}
+.footer-col ul { list-style: none; }
+.footer-col ul li {
+  font-size: 13px; color: var(--gray); padding: 6px 0;
+  cursor: pointer; transition: color 0.2s;
+}
+.footer-col ul li:hover { color: var(--white); }
+.footer-bottom {
+  border-top: 1px solid var(--border); padding-top: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-bottom p { font-size: 12px; color: var(--gray); }
+.footer-bottom .mono { font-family: 'Space Mono', monospace; color: var(--gold); font-size: 11px; }
 
-/* PLATFORM */
-.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:2.5rem;border:1px solid rgba(46,117,182,.1)}
-.plat-card{background:var(--cb);padding:1.75rem 1.25rem;border:1px solid rgba(46,117,182,.08)}
-.plat-lbl{font-family:var(--fm);font-size:.58rem;letter-spacing:.2em;color:var(--gd);margin-bottom:.6rem;display:block}
-.plat-card strong{display:block;color:var(--wh);font-size:.85rem;margin-bottom:.35rem}
-.plat-card p{font-size:.75rem;line-height:1.65;color:var(--mt)}
+/* ═══════════════════════════════════════════════
+   CONTACT MODAL
+═══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--navy-mid); border: 1px solid var(--border);
+  border-radius: 6px; padding: 48px; max-width: 560px; width: 90%;
+  position: relative; transform: translateY(20px);
+  transition: transform 0.25s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal h2 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px;
+  letter-spacing: 2px; margin-bottom: 8px;
+}
+.modal-sub { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--gold);
+  margin-bottom: 8px; font-weight: 600;
+}
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border); color: var(--white);
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  padding: 12px 16px; border-radius: 3px; outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  border-color: var(--gold);
+}
+.form-group textarea { min-height: 100px; resize: vertical; }
+.form-group select option { background: var(--navy-mid); }
+.modal-close {
+  position: absolute; top: 20px; right: 20px;
+  background: none; border: none; color: var(--gray);
+  font-size: 24px; cursor: pointer; line-height: 1;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: var(--white); }
+.form-submit {
+  width: 100%; background: var(--gold); color: var(--navy);
+  border: none; font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; padding: 16px;
+  border-radius: 3px; cursor: pointer; transition: all 0.2s;
+  margin-top: 8px;
+}
+.form-submit:hover { background: var(--gold-light); }
+.form-note { font-size: 12px; color: var(--gray); margin-top: 12px; text-align: center; }
 
-/* ABOUT */
-.about-grid{display:grid;grid-template-columns:300px 1fr;gap:4rem;align-items:start}
-.photo-ph{aspect-ratio:3/4;background:var(--cb);border:1px solid rgba(46,117,182,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem}
-.photo-init{font-family:var(--ff);font-size:4rem;color:rgba(200,169,110,.28);letter-spacing:.1em}
-.photo-name{font-family:var(--fm);font-size:.6rem;letter-spacing:.15em;color:var(--mt);text-align:center;line-height:1.6}
-.cert-stack{display:flex;flex-direction:column;gap:.6rem;margin-top:1.25rem}
-.cert-row{display:flex;align-items:center;gap:.75rem;background:var(--cb);padding:.5rem .75rem;border-left:2px solid var(--gd)}
-.cert-abbr{font-family:var(--fm);font-size:.58rem;letter-spacing:.15em;color:var(--gd);white-space:nowrap}
-.cert-name{font-size:.72rem;color:var(--mt)}
-.bio-body{font-size:.85rem;line-height:1.85;color:var(--mt);margin-bottom:1rem}
-.bio-stats{display:flex;gap:2rem;margin-top:2rem;padding-top:1.75rem;border-top:1px solid rgba(46,117,182,.15);flex-wrap:wrap}
-.bs{display:flex;flex-direction:column;gap:.2rem}
-.bs-n{font-family:var(--ff);font-size:2.2rem;color:var(--wh)}
-.bs-l{font-family:var(--fm);font-size:.55rem;letter-spacing:.12em;color:var(--mt)}
-
-/* CRED */
-.cred-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-top:2.5rem;border:1px solid rgba(46,117,182,.1)}
-.cred-card{background:var(--cb);padding:2rem 1.5rem;border:1px solid rgba(46,117,182,.08);transition:background .3s}
-.cred-card:hover{background:rgba(15,30,58,.9)}
-.cred-head{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem}
-.cred-abbr{font-family:var(--fm);font-size:1.1rem;color:var(--gd);background:rgba(200,169,110,.07);border:1px solid rgba(200,169,110,.2);padding:.3rem .6rem;letter-spacing:.08em;white-space:nowrap}
-.cred-title{font-size:.92rem;font-weight:600;color:var(--wh);margin-bottom:.15rem}
-.cred-issuer{font-family:var(--fm);font-size:.62rem;letter-spacing:.08em;color:var(--gd)}
-.cred-desc{font-size:.78rem;line-height:1.75;color:var(--mt);margin-bottom:1rem}
-.cred-tags{display:flex;gap:.4rem;flex-wrap:wrap}
-.tag{font-family:var(--fm);font-size:.55rem;letter-spacing:.1em;color:var(--mt);border:1px solid rgba(255,255,255,.08);padding:.2rem .5rem}
-
-/* TECH */
-.tech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:2.5rem}
-.tech-head{font-family:var(--fm);font-size:.6rem;letter-spacing:.2em;color:var(--gd);margin-bottom:1rem;display:block}
-.tech-list li{font-size:.78rem;color:var(--mt);padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.05);line-height:1.5}
-
-/* PHILO */
-.philo-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:4rem;align-items:center}
-blockquote{font-size:.92rem;line-height:1.9;color:var(--ow);font-style:italic;border-left:2px solid var(--gd);padding-left:1.5rem;margin-bottom:1.25rem}
-
-/* VALUES */
-.val-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:2.5rem}
-.val-card{background:var(--cb);padding:1.5rem;border-top:2px solid rgba(46,117,182,.18);transition:border-top-color .3s,background .3s}
-.val-card:hover{border-top-color:var(--gd);background:rgba(15,28,52,.9)}
-.val-icon{font-size:1.3rem;color:var(--gd);margin-bottom:.75rem}
-.val-card h4{font-family:var(--ff);font-size:1.15rem;color:var(--wh);margin-bottom:.4rem}
-.val-card p{font-size:.75rem;line-height:1.65;color:var(--mt)}
-
-/* FOOTER */
-footer{background:#050810;border-top:1px solid rgba(46,117,182,.1);padding:2.5rem 1.5rem 1.25rem}
-.ft-inner{max-width:1200px;margin:0 auto;display:flex;gap:3rem;flex-wrap:wrap;padding-bottom:2rem;border-bottom:1px solid rgba(255,255,255,.05)}
-.ft-left{flex:1;min-width:160px}
-.ft-tagline{font-size:.75rem;color:var(--mt);margin-top:.6rem}
-.ft-links{display:flex;gap:3rem;flex-wrap:wrap}
-.ft-col{display:flex;flex-direction:column;gap:.5rem;min-width:130px}
-.ft-col h5{font-family:var(--fm);font-size:.58rem;letter-spacing:.2em;color:var(--gd);margin-bottom:.3rem}
-.ft-col span,.ft-col a{font-size:.75rem;color:var(--mt);cursor:pointer;transition:color .2s}
-.ft-col a:hover,.ft-col span:hover{color:var(--wh)}
-.ft-bot{max-width:1200px;margin:.75rem auto 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.4rem}
-.ft-bot span{font-family:var(--fm);font-size:.58rem;color:#444}
-
-/* RESPONSIVE */
-@media(max-width:1000px){.svc-grid{grid-template-columns:repeat(2,1fr)}.svcl-grid{grid-template-columns:repeat(2,1fr)}.sector-grid{grid-template-columns:repeat(2,1fr)}.plat-grid{grid-template-columns:repeat(2,1fr)}.tech-grid{grid-template-columns:repeat(2,1fr)}.cred-grid{grid-template-columns:1fr}.val-grid{grid-template-columns:repeat(2,1fr)}.diff-grid{grid-template-columns:1fr;gap:2.5rem}.intro-grid{grid-template-columns:1fr;gap:2rem}.about-grid{grid-template-columns:1fr}.philo-grid{grid-template-columns:1fr;gap:2rem}}
-@media(max-width:640px){.svc-grid{grid-template-columns:1fr}.engage-grid{grid-template-columns:1fr}.sector-grid{grid-template-columns:1fr}.val-grid{grid-template-columns:1fr}.tech-grid{grid-template-columns:1fr}.plat-grid{grid-template-columns:1fr}.stat-div{display:none}.nav-tabs{gap:.05rem}.nav-tab{padding:.35rem .5rem;font-size:.52rem}}
+/* Utility */
+.gold { color: var(--gold); }
+.mt-40 { margin-top: 40px; }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-logo" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('home')">HOME</button>
-    <button class="nav-tab" onclick="showPage('utilities')">UTILITIES</button>
-    <button class="nav-tab" onclick="showPage('environmental')">ENVIRONMENTAL</button>
-    <button class="nav-tab" onclick="showPage('municipal')">MUNICIPAL</button>
-    <button class="nav-tab" onclick="showPage('drone')">DRONE</button>
-    <button class="nav-tab" onclick="showPage('projects')">PROJECTS</button>
-    <button class="nav-tab" onclick="showPage('about')">ABOUT</button>
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="showPage('home')">
+    MIDSPAN<span style="color:var(--gold)">·</span>GEOSPATIAL
   </div>
-  <button class="nav-cta" onclick="showPage('home',true)">GET IN TOUCH</button>
+  <div class="nav-links">
+    <button onclick="showPage('home')" id="nav-home" class="active">Home</button>
+    <button onclick="showPage('utilities')" id="nav-utilities">Utilities</button>
+    <button onclick="showPage('environmental')" id="nav-environmental">Environmental</button>
+    <button onclick="showPage('municipal')" id="nav-municipal">Municipal</button>
+    <button onclick="showPage('drone')" id="nav-drone">Drone</button>
+    <button onclick="showPage('projects')" id="nav-projects">Projects</button>
+    <button onclick="showPage('about')" id="nav-about">About</button>
+  </div>
+  <button class="nav-cta" onclick="openModal()">Start a Conversation</button>
 </nav>
 
-<!-- ═══ HOME ═══ -->
-<div class="page active" id="pg-home">
+<!-- ════════════════════ HOME ════════════════════ -->
+<div id="home" class="page active">
   <section class="hero">
-    <div class="xhair"><div class="xh-h"></div><div class="xh-v"></div><div class="xh-c"></div><div class="xh-coords">51.0447° N &nbsp;|&nbsp; 114.0719° W</div></div>
+    <div class="grid-overlay"></div>
+    <div class="crosshair">
+      <div class="ch-dot"></div>
+      <div class="ch-coords">51.0447° N · 114.0719° W · Calgary, AB</div>
+    </div>
     <div class="hero-content">
-      <span class="eyebrow">GISP CERTIFIED &nbsp;·&nbsp; CALGARY, AB &nbsp;·&nbsp; WESTERN CANADA</span>
-      <h1 class="hero-title">YOUR GIS<br><span class="gold">PARTNER</span></h1>
-      <p class="hero-sub">Utility Network · Enterprise GIS · Drone Mapping<br>15 years of precision geospatial expertise</p>
+      <p class="hero-pre">// Calgary · Alberta · Canada</p>
+      <h1 class="hero-title">
+        YOUR GIS<br><span class="line2">PARTNER</span>
+      </h1>
+      <p class="hero-sub">
+        <strong>Midspan Geospatial Ltd.</strong> delivers enterprise-grade spatial intelligence
+        to utilities, environmental firms, and municipalities across Western Canada —
+        principal-led, <strong>15+ years</strong> of proven GIS excellence.
+      </p>
       <div class="hero-btns">
-        <button class="btn-p" onclick="showPage('utilities')">Explore Services</button>
-         </div>
+        <button class="btn-primary" onclick="openModal()">Start a Conversation</button>
+        <button class="btn-outline" onclick="showPage('projects')">View Our Work →</button>
+      </div>
     </div>
   </section>
 
-  <div class="stat-bar">
-    <div class="stat"><span class="stat-num">15<span class="gold">+</span></span><span class="stat-lbl">Years GIS Experience</span></div>
-    <div class="stat-div"></div>
-    <div class="stat"><span class="stat-num">GISP</span><span class="stat-lbl">Certified Professional</span></div>
-    <div class="stat-div"></div>
-    <div class="stat"><span class="stat-num">3<span class="gold">×</span></span><span class="stat-lbl">Esri Certified</span></div>
-    <div class="stat-div"></div>
-    <div class="stat"><span class="stat-num">TC<span class="gold">✓</span></span><span class="stat-lbl">Advanced RPAS Pilot</span></div>
+  <div class="stats-strip">
+    <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">Years Experience</div></div>
+    <div class="stat-item"><div class="stat-num">4</div><div class="stat-label">Sectors Served</div></div>
+    <div class="stat-item"><div class="stat-num">UN</div><div class="stat-label">Implementations</div></div>
+    <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Principal-Led</div></div>
+    <div class="stat-item"><div class="stat-num">GISP</div><div class="stat-label">Certified</div></div>
   </div>
 
   <div class="section">
-    <div class="intro-grid">
-      <div><span class="sec-ey">WHO WE ARE</span><h2 class="sec-title">Precision at the<br><span class="gold">midpoint</span></h2></div>
-      <div>
-        <p class="i-body">Midspan Geospatial Ltd bridges the gap between raw spatial data and real operational decisions. We are a Calgary-based independent GIS consultancy with over 15 years of hands-on experience — delivering the technical depth of a large firm with the responsiveness and accountability of a principal-led practice.</p>
-        <p class="i-body">Every engagement is led and delivered by a GISP-certified GIS professional. No junior staff. No handoffs. The expert you engage is the expert who does the work.</p>
+    <p class="section-tag">// Services</p>
+    <h2 class="section-title">Spatial Intelligence<br>Across Every Sector</h2>
+    <p class="section-sub">From underground utility networks to airborne drone surveys, we bring enterprise GIS capability to every project.</p>
+    <div class="services-grid">
+      <div class="service-card" onclick="showPage('utilities')">
+        <div class="svc-num">01 /</div>
+        <div class="svc-icon">⚡</div>
+        <div class="svc-title">Utility Network GIS</div>
+        <p class="svc-desc">ArcGIS Utility Network and geometric network management for gas, electric, water and telecom providers.</p>
+        <span class="svc-arrow">Explore →</span>
+      </div>
+      <div class="service-card" onclick="showPage('environmental')">
+        <div class="svc-num">02 /</div>
+        <div class="svc-icon">🌿</div>
+        <div class="svc-title">Environmental GIS</div>
+        <p class="svc-desc">Spatial data management for environmental assessments, wetland mapping, and regulatory compliance reporting.</p>
+        <span class="svc-arrow">Explore →</span>
+      </div>
+      <div class="service-card" onclick="showPage('municipal')">
+        <div class="svc-num">03 /</div>
+        <div class="svc-icon">🏙️</div>
+        <div class="svc-title">Municipal GIS</div>
+        <p class="svc-desc">Enterprise GIS systems, land information management, and public-facing map portal development for municipalities.</p>
+        <span class="svc-arrow">Explore →</span>
+      </div>
+      <div class="service-card" onclick="showPage('drone')">
+        <div class="svc-num">04 /</div>
+        <div class="svc-icon">🚁</div>
+        <div class="svc-title">Drone Mapping</div>
+        <p class="svc-desc">TC Advanced RPAS-certified aerial surveys delivering orthomosaics, point clouds, and 3D terrain models.</p>
+        <span class="svc-arrow">Explore →</span>
       </div>
     </div>
   </div>
 
-  <div style="padding:0 0 2rem">
-    <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem 1.5rem"><span class="sec-ey">WHAT WE DO</span><h2 class="sec-title">Industry-specific <span class="gold">GIS expertise</span></h2></div>
-    <div class="svc-grid">
-      <div class="svc-card" style="background-image:url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&q=70')" onclick="showPage('utilities')">
-        <div class="svc-ov"></div>
-        <div class="svc-cnt"><span class="svc-tag">01 / UTILITIES</span><h3 class="svc-ttl">Utility Network GIS</h3><p class="svc-desc">ArcGIS Utility Network migration, enterprise geodatabase administration, and field workflow deployment for electric, gas, water, and telecom operators.</p><span class="svc-cta">Explore →</span></div>
+  <div class="cta-band">
+    <h2>READY TO MAP YOUR NEXT CHALLENGE?</h2>
+    <p>Let's discuss how Midspan Geospatial can deliver measurable results for your organization.</p>
+    <button class="btn-primary" onclick="openModal()">Get in Touch</button>
+  </div>
+</div>
+
+<!-- ════════════════════ UTILITIES ════════════════════ -->
+<div id="utilities" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// 01 — Utility Network GIS</p>
+    <h1>Utility Network<br>& Enterprise GIS</h1>
+    <p>Complete lifecycle management of gas, electric, water, and telecom utility networks using Esri's ArcGIS Utility Network platform.</p>
+  </div>
+  <div class="detail-grid">
+    <div class="detail-block">
+      <h3>Core Capabilities</h3>
+      <ul>
+        <li>ArcGIS Utility Network design, implementation and migration</li>
+        <li>Geometric network to Utility Network upgrades</li>
+        <li>Pipeline integrity data management (PIMS)</li>
+        <li>GIS-SCADA integration and operational dashboards</li>
+        <li>Field data collection with ArcGIS Field Maps</li>
+        <li>Outage management and asset condition workflows</li>
+        <li>Regulatory compliance data sets (CER, NEB reporting)</li>
+      </ul>
+    </div>
+    <div class="detail-block">
+      <h3>Technologies</h3>
+      <div class="tech-tags">
+        <span class="tech-tag">ArcGIS Utility Network</span>
+        <span class="tech-tag">ArcGIS Enterprise</span>
+        <span class="tech-tag">Field Maps</span>
+        <span class="tech-tag">PIMS</span>
+        <span class="tech-tag">ArcGIS Pro</span>
+        <span class="tech-tag">Python / ModelBuilder</span>
+        <span class="tech-tag">SQL Server</span>
+        <span class="tech-tag">Oracle Spatial</span>
+        <span class="tech-tag">AutoCAD Integration</span>
+        <span class="tech-tag">CityWorks</span>
       </div>
-      <div class="svc-card" style="background-image:url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=70')" onclick="showPage('environmental')">
-        <div class="svc-ov"></div>
-        <div class="svc-cnt"><span class="svc-tag">02 / ENVIRONMENTAL</span><h3 class="svc-ttl">Environmental GIS</h3><p class="svc-desc">Permitting maps, ESA support, reclamation monitoring, and regulatory exhibit production for AER, AEP, and ECCC submissions.</p><span class="svc-cta">Explore →</span></div>
-      </div>
-      <div class="svc-card" style="background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&q=70')" onclick="showPage('municipal')">
-        <div class="svc-ov"></div>
-        <div class="svc-cnt"><span class="svc-tag">03 / MUNICIPAL</span><h3 class="svc-ttl">Municipal & Government</h3><p class="svc-desc">Asset inventory, web GIS portals, zoning maps, and capital planning for Alberta municipalities and counties.</p><span class="svc-cta">Explore →</span></div>
-      </div>
-      <div class="svc-card" style="background-image:url('https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=600&q=70')" onclick="showPage('drone')">
-        <div class="svc-ov"></div>
-        <div class="svc-cnt"><span class="svc-tag">04 / AERIAL</span><h3 class="svc-ttl">Drone Mapping</h3><p class="svc-desc">TC Advanced RPAS operations with full in-house GIS processing — orthomosaics, DTMs, asset inspection, and corridor surveys.</p><span class="svc-cta">Explore →</span></div>
+      <div style="margin-top:36px">
+        <h3>Industries Served</h3>
+        <ul>
+          <li>Natural gas distribution & transmission</li>
+          <li>Electric power utilities</li>
+          <li>Water & wastewater authorities</li>
+          <li>Telecommunications providers</li>
+        </ul>
       </div>
     </div>
   </div>
-
-  <div style="background:var(--nv2);padding:4rem 0">
-    <div class="section" style="padding-top:0;padding-bottom:0">
-      <div class="diff-grid">
-        <div>
-          <span class="sec-ey">WHY MIDSPAN</span>
-          <h2 class="sec-title">Rare credentials.<br>Direct <span class="gold">delivery.</span></h2>
-          <p class="diff-body">Most GIS consultancies assign your project to whoever is available. At Midspan, every engagement is led by a principal with GISP certification, three Esri technical certifications, an Advanced RPAS pilot certificate, and 15 years of utility and environmental GIS experience.</p>
-          <button class="btn-p" style="margin-top:1.5rem" onclick="showPage('about')">Our Credentials</button>
+  <div class="case-strip">
+    <div class="inner">
+      <p class="section-tag">// Selected Projects</p>
+      <h2 class="section-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">Utility Network Results</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <h4>Gas Distribution UN Migration</h4>
+          <p>Migrated 2,400 km of legacy geometric network data to ArcGIS Utility Network for a Western Canada gas distributor.</p>
+          <div class="case-outcome">↑ 40% field data accuracy · 6-month delivery</div>
         </div>
-        <div>
-          <div class="diff-item"><div class="di-icon">⬡</div><div><div class="di-title">GISP Certified</div><p class="di-desc">Internationally recognized, vendor-neutral credential. Held by fewer than 30,000 practitioners worldwide. Scores in formal RFP evaluations.</p></div></div>
-          <div class="diff-item"><div class="di-icon">⬡</div><div><div class="di-title">Esri Utility Network Associate</div><p class="di-desc">One of the most technically demanding Esri certifications available. Direct specialization in the platform Canadian utilities are migrating to now.</p></div></div>
-          <div class="diff-item"><div class="di-icon">⬡</div><div><div class="di-title">Advanced RPAS Pilot</div><p class="di-desc">Transport Canada Advanced certification for controlled airspace operations. Capture to GIS-ready product — no vendor handoff.</p></div></div>
-          <div class="diff-item"><div class="di-icon">⬡</div><div><div class="di-title">Alberta Regulatory Fluency</div><p class="di-desc">AER, AEP, ECCC, and Impact Assessment Act requirements built into every spatial deliverable from the start.</p></div></div>
+        <div class="case-card">
+          <h4>Electric Utility GIS Optimization</h4>
+          <p>Redesigned network topology and implemented trace analytics for outage prediction and CER compliance reporting.</p>
+          <div class="case-outcome">↓ 25% outage response time</div>
+        </div>
+        <div class="case-card">
+          <h4>Water Network Condition Assessment</h4>
+          <p>Built condition rating data model and Field Maps workflow for a municipal water authority's 800 km pipe network.</p>
+          <div class="case-outcome">Asset registry digitized to 98% completeness</div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="section">
-    <span class="sec-ey">HOW WE WORK</span>
-    <h2 class="sec-title" style="text-align:center;margin-bottom:0">Flexible <span class="gold">engagement</span></h2>
-    <div class="engage-grid">
-      <div class="engage-card"><span class="eng-num">01</span><h3>Project-Based</h3><p>Defined scope, fixed deliverables, clear timeline. Ideal for migrations, deployments, and data projects with a defined end state.</p></div>
-      <div class="engage-card"><span class="eng-num">02</span><h3>Retainer</h3><p>Committed monthly hours for ongoing GIS administration, analysis, or field workflow support. Predictable capacity, no procurement overhead.</p></div>
-      <div class="engage-card"><span class="eng-num">03</span><h3>Subconsultant</h3><p>GIS capacity for prime engineering and environmental firms during peak permitting seasons or specialized project requirements.</p></div>
-    </div>
+<!-- ════════════════════ ENVIRONMENTAL ════════════════════ -->
+<div id="environmental" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// 02 — Environmental GIS</p>
+    <h1>Environmental &<br>Land Management GIS</h1>
+    <p>Spatial intelligence for environmental consultants, regulators, and land managers navigating complex Canadian regulatory landscapes.</p>
   </div>
-
-  <div class="contact-wrap" id="contact">
-    <div class="contact-inner">
-      <span class="sec-ey" style="color:var(--gd)">LET'S TALK</span>
-      <h2 class="sec-title" style="font-size:clamp(2rem,5vw,4rem)">Ready to solve your<br>GIS challenge?</h2>
-      <p class="contact-sub">Whether you need a Utility Network implementation, overflow GIS capacity, or a drone mapping survey — reach out for a no-obligation conversation.</p>
-      <div class="contact-row">
-        <div class="c-item"><span class="lbl">LOCATION</span><span class="val">Calgary, Alberta, Canada</span></div>
-        <div class="c-item"><span class="lbl">EMAIL</span><span class="val">[email address]</span></div>
-        <div class="c-item"><span class="lbl">PHONE</span><span class="val">[phone number]</span></div>
-         </div>
-      <button class="btn-p" style="padding:.85rem 2.25rem" onclick="document.getElementById('contact-modal').style.display='flex'">Start a Conversation</button>
+  <div class="detail-grid">
+    <div class="detail-block">
+      <h3>Core Capabilities</h3>
+      <ul>
+        <li>Environmental baseline mapping and reporting</li>
+        <li>Wetland, riparian and sensitive habitat delineation</li>
+        <li>Reclamation and remediation progress tracking</li>
+        <li>AENV and federal regulatory GIS submissions</li>
+        <li>Environmental monitoring data integration</li>
+        <li>Pipeline corridor environmental assessment</li>
+        <li>LiDAR terrain analysis and hydrological modelling</li>
+        <li>Species at risk habitat mapping</li>
+      </ul>
     </div>
-  </div>
-
-  <!-- CONTACT MODAL -->
-  <div id="contact-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,20,.92);align-items:center;justify-content:center;padding:1.5rem" onclick="if(event.target===this)this.style.display='none'">
-    <div style="background:#0D1829;border:1px solid rgba(46,117,182,.25);border-top:2px solid #C8A96E;max-width:520px;width:100%;padding:2.5rem 2rem;position:relative;max-height:90vh;overflow-y:auto">
-      <button onclick="document.getElementById('contact-modal').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#7A8FA8;font-size:1.2rem;cursor:pointer;line-height:1">✕</button>
-      <span style="font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.2em;color:#C8A96E;display:block;margin-bottom:.5rem">GET IN TOUCH</span>
-      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;letter-spacing:.02em;margin-bottom:1.5rem">Start a Conversation</h3>
-      <div style="display:flex;flex-direction:column;gap:.85rem;margin-bottom:1.5rem">
-        <input id="cf-name" type="text" placeholder="Your Name" style="background:rgba(255,255,255,.05);border:1px solid rgba(46,117,182,.2);color:#E8EFF6;padding:.75rem 1rem;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;width:100%;border-radius:2px" onfocus="this.style.borderColor='rgba(200,169,110,.5)'" onblur="this.style.borderColor='rgba(46,117,182,.2)'">
-        <input id="cf-email" type="email" placeholder="Your Email" style="background:rgba(255,255,255,.05);border:1px solid rgba(46,117,182,.2);color:#E8EFF6;padding:.75rem 1rem;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;width:100%;border-radius:2px" onfocus="this.style.borderColor='rgba(200,169,110,.5)'" onblur="this.style.borderColor='rgba(46,117,182,.2)'">
-        <input id="cf-company" type="text" placeholder="Company / Organization" style="background:rgba(255,255,255,.05);border:1px solid rgba(46,117,182,.2);color:#E8EFF6;padding:.75rem 1rem;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;width:100%;border-radius:2px" onfocus="this.style.borderColor='rgba(200,169,110,.5)'" onblur="this.style.borderColor='rgba(46,117,182,.2)'">
-        <select id="cf-service" style="background:#0D1829;border:1px solid rgba(46,117,182,.2);color:#7A8FA8;padding:.75rem 1rem;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;width:100%;border-radius:2px">
-          <option value="">Service of Interest</option>
-          <option>Utility Network GIS</option>
-          <option>Enterprise Geodatabase Administration</option>
-          <option>ArcGIS Enterprise Administration</option>
-          <option>Field Data Collection Workflows</option>
-          <option>Drone Mapping &amp; Aerial Inspection</option>
-          <option>Environmental &amp; Regulatory GIS</option>
-          <option>Municipal GIS</option>
-          <option>GIS Automation (Python / FME)</option>
-          <option>General / Not Sure Yet</option>
-        </select>
-        <textarea id="cf-msg" placeholder="Tell us about your project or question..." rows="4" style="background:rgba(255,255,255,.05);border:1px solid rgba(46,117,182,.2);color:#E8EFF6;padding:.75rem 1rem;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;width:100%;resize:vertical;border-radius:2px" onfocus="this.style.borderColor='rgba(200,169,110,.5)'" onblur="this.style.borderColor='rgba(46,117,182,.2)'"></textarea>
+    <div class="detail-block">
+      <h3>Technologies</h3>
+      <div class="tech-tags">
+        <span class="tech-tag">ArcGIS Pro</span>
+        <span class="tech-tag">Spatial Analyst</span>
+        <span class="tech-tag">3D Analyst</span>
+        <span class="tech-tag">LiDAR Processing</span>
+        <span class="tech-tag">Remote Sensing</span>
+        <span class="tech-tag">QGIS</span>
+        <span class="tech-tag">Python / NumPy</span>
+        <span class="tech-tag">Drone2Map</span>
+        <span class="tech-tag">ArcGIS Online</span>
       </div>
-      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.25rem">
-        <button onclick="submitContactForm()" class="btn-p" style="padding:.75rem 1.75rem">Send Message</button>
-        <a href="https://www.linkedin.com/in/ibe-ezuma-gisp%C2%AE-39774a3a" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:#C8A96E;border:1px solid rgba(200,169,110,.3);padding:.72rem 1.1rem;transition:background .2s;white-space:nowrap" onmouseover="this.style.background='rgba(200,169,110,.08)'" onmouseout="this.style.background='none'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="#C8A96E"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    </div>
+  </div>
+  <div class="case-strip">
+    <div class="inner">
+      <p class="section-tag">// Selected Projects</p>
+      <h2 class="section-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">Environmental Results</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <h4>Pipeline Corridor Baseline Study</h4>
+          <p>Compiled multi-layer environmental GIS baseline for 180 km pipeline corridor regulatory submission in Northern Alberta.</p>
+          <div class="case-outcome">Approved on first review · AER compliant</div>
+        </div>
+        <div class="case-card">
+          <h4>Wetland Delineation & Monitoring</h4>
+          <p>Drone-assisted wetland mapping integrated with ArcGIS Field Maps for annual monitoring and reclamation compliance.</p>
+          <div class="case-outcome">1,200 ha mapped · 35% faster than traditional methods</div>
+        </div>
+        <div class="case-card">
+          <h4>LiDAR Hydrological Analysis</h4>
+          <p>Processed airborne LiDAR for drainage modelling and flood risk assessment supporting municipal infrastructure planning.</p>
+          <div class="case-outcome">Sub-metre accuracy · Integrated with municipal GIS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ MUNICIPAL ════════════════════ -->
+<div id="municipal" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// 03 — Municipal GIS</p>
+    <h1>Municipal &<br>Government GIS</h1>
+    <p>Building the spatial data infrastructure that powers smarter cities — from ArcGIS Enterprise deployments to citizen-facing map portals.</p>
+  </div>
+  <div class="detail-grid">
+    <div class="detail-block">
+      <h3>Core Capabilities</h3>
+      <ul>
+        <li>ArcGIS Enterprise design, deployment and administration</li>
+        <li>Land information and parcel management systems</li>
+        <li>Public-facing ArcGIS Experience Builder portals</li>
+        <li>GIS integration with municipal ERP and permitting systems</li>
+        <li>Address management and civic addressing</li>
+        <li>Transportation network GIS and road inventory</li>
+        <li>Parks and recreation asset management</li>
+        <li>Emergency management and 911 GIS</li>
+      </ul>
+    </div>
+    <div class="detail-block">
+      <h3>Technologies</h3>
+      <div class="tech-tags">
+        <span class="tech-tag">ArcGIS Enterprise</span>
+        <span class="tech-tag">Portal for ArcGIS</span>
+        <span class="tech-tag">Experience Builder</span>
+        <span class="tech-tag">ArcGIS Online</span>
+        <span class="tech-tag">Parcel Fabric</span>
+        <span class="tech-tag">Esri Roads & Highways</span>
+        <span class="tech-tag">ArcGIS Dashboards</span>
+        <span class="tech-tag">Python / FME</span>
+        <span class="tech-tag">SQL Server</span>
+        <span class="tech-tag">REST APIs</span>
+      </div>
+    </div>
+  </div>
+  <div class="case-strip">
+    <div class="inner">
+      <p class="section-tag">// Selected Projects</p>
+      <h2 class="section-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">Municipal Results</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <h4>ArcGIS Enterprise Deployment</h4>
+          <p>Full enterprise GIS deployment for a mid-size Alberta municipality including data migration, portal build and staff training.</p>
+          <div class="case-outcome">18 departments onboarded · On time and on budget</div>
+        </div>
+        <div class="case-card">
+          <h4>Land Information System Rebuild</h4>
+          <p>Redesigned parcel fabric and assessment data integration for a county with 45,000 parcels across rural and urban zones.</p>
+          <div class="case-outcome">Data integrity from 71% to 99%</div>
+        </div>
+        <div class="case-card">
+          <h4>Citizen Map Portal</h4>
+          <p>Built public-facing ArcGIS Experience Builder application for permit status, zoning, and property information look-up.</p>
+          <div class="case-outcome">3,000+ monthly users · 60% reduction in counter inquiries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ DRONE ════════════════════ -->
+<div id="drone" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// 04 — Drone Mapping & Aerial Survey</p>
+    <h1>Drone Mapping &<br>Aerial Data Capture</h1>
+    <p>TC Advanced RPAS-certified aerial surveys delivering survey-grade spatial data for infrastructure, environmental, and construction clients.</p>
+  </div>
+  <div class="detail-grid">
+    <div class="detail-block">
+      <h3>Survey Deliverables</h3>
+      <ul>
+        <li>Orthomosaic imagery (cm-resolution)</li>
+        <li>Dense point clouds (LiDAR and photogrammetric)</li>
+        <li>Digital Elevation Models (DEM / DSM / DTM)</li>
+        <li>3D terrain and volumetric models</li>
+        <li>Thermal infrared surveys</li>
+        <li>Linear corridor surveys (pipelines, power lines)</li>
+        <li>Change detection and progress monitoring</li>
+        <li>Infrastructure inspection imagery</li>
+      </ul>
+    </div>
+    <div class="detail-block">
+      <h3>Technologies & Certifications</h3>
+      <div class="tech-tags">
+        <span class="tech-tag">TC Advanced RPAS</span>
+        <span class="tech-tag">DJI Enterprise</span>
+        <span class="tech-tag">Pix4D</span>
+        <span class="tech-tag">Drone2Map</span>
+        <span class="tech-tag">ArcGIS Reality</span>
+        <span class="tech-tag">LAStools</span>
+        <span class="tech-tag">CloudCompare</span>
+        <span class="tech-tag">GCP Control</span>
+        <span class="tech-tag">NRCAN CSRS-PPP</span>
+      </div>
+      <div style="margin-top:36px">
+        <h3>Regulatory Compliance</h3>
+        <ul>
+          <li>Transport Canada Advanced RPAS Operations certified</li>
+          <li>Controlled airspace authorization experience</li>
+          <li>Night operations and BVLOS planning capability</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="case-strip">
+    <div class="inner">
+      <p class="section-tag">// Selected Projects</p>
+      <h2 class="section-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">Drone Survey Results</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <h4>Pipeline ROW Corridor Survey</h4>
+          <p>160 km pipeline right-of-way photogrammetric survey for encroachment detection and vegetation management planning.</p>
+          <div class="case-outcome">3 cm ortho accuracy · 4-day field campaign</div>
+        </div>
+        <div class="case-card">
+          <h4>Mine Site Volumetric Survey</h4>
+          <p>Quarterly drone surveys for stockpile volumetric change detection and reclamation progress documentation.</p>
+          <div class="case-outcome">±0.5% volume accuracy vs. traditional survey</div>
+        </div>
+        <div class="case-card">
+          <h4>Municipal Infrastructure Inspection</h4>
+          <p>Bridge and culvert condition inspection survey for a rural municipality, replacing rope access and manned aircraft methods.</p>
+          <div class="case-outcome">75% cost reduction vs. prior method</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ PROJECTS ════════════════════ -->
+<div id="projects" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// Projects</p>
+    <h1>Work That<br>Speaks for Itself</h1>
+    <p>Principal-led GIS delivery across utilities, environmental, municipal, and drone sectors. Every project — every line of work — is Ibe Ezuma, GISP.</p>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterProjects('all', this)">All</button>
+    <button class="filter-btn" onclick="filterProjects('utility', this)">Utility Network</button>
+    <button class="filter-btn" onclick="filterProjects('enterprise', this)">Enterprise GIS</button>
+    <button class="filter-btn" onclick="filterProjects('environmental', this)">Environmental</button>
+    <button class="filter-btn" onclick="filterProjects('municipal', this)">Municipal</button>
+    <button class="filter-btn" onclick="filterProjects('drone', this)">Drone Mapping</button>
+    <button class="filter-btn" onclick="filterProjects('automation', this)">Automation</button>
+  </div>
+
+  <div class="projects-grid" id="projectsGrid" style="margin-top:24px;margin-bottom:80px">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- ════════════════════ ABOUT ════════════════════ -->
+<div id="about" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// About Midspan Geospatial</p>
+    <h1>Principal-Led.<br>Results-Driven.</h1>
+    <p>Midspan Geospatial Ltd. is a Calgary-based GIS consultancy delivering expert spatial intelligence to Western Canada's most demanding sectors.</p>
+  </div>
+
+  <div class="about-grid">
+    <!-- Principal Card -->
+    <div>
+      <div class="principal-card">
+        <div class="principal-avatar">IE</div>
+        <div class="principal-name">Ibe Ezuma</div>
+        <div class="principal-title">GISP® | Principal Consultant | TC Advanced RPAS</div>
+        <p class="principal-bio">
+          With over 15 years of hands-on GIS experience spanning utility networks, environmental data management, municipal enterprise systems, and aerial survey, Ibe brings senior-level expertise to every engagement — personally.
+        </p>
+        <p class="principal-bio">
+          No junior hand-offs. No black-box delivery. Every project is scoped, executed, and quality-assured by the same GISP-certified professional who signed the proposal.
+        </p>
+        <div class="creds">
+          <span class="cred-badge">GISP®</span>
+          <span class="cred-badge">ArcGIS Certified Professional</span>
+          <span class="cred-badge">TC Advanced RPAS</span>
+          <span class="cred-badge">15+ Years GIS</span>
+        </div>
+        <a class="linkedin-btn" href="https://www.linkedin.com/in/ibe-ezuma-gisp%C2%AE-39774a3a" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
           Connect on LinkedIn
         </a>
       </div>
-      <div id="cf-success" style="display:none;padding:.75rem 1rem;background:rgba(55,86,35,.15);border:1px solid rgba(55,86,35,.3);color:#8BC34A;font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.08em">✓ MESSAGE SENT — we will be in touch shortly.</div>
-      <p style="font-size:.7rem;color:#444;margin-top:1rem;font-family:'Space Mono',monospace">This form will open your email client. Alternatively connect directly on LinkedIn.</p>
     </div>
-  </div>
-    <div class="ft-inner">
-      <div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div>
-      <div class="ft-links">
-        <div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div>
-        <div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div>
-        <div class="ft-col"><h5>Certifications</h5><span>GISP — GISCI</span><span>ArcGIS Pro Professional</span><span>ArcGIS Enterprise Admin</span><span>Utility Network Associate</span><span>TC Advanced RPAS</span></div>
-      </div>
-    </div>
-    <div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA · ALL RIGHTS RESERVED</span><span>GST/HST REGISTERED</span></div>
-  </footer>
-</div>
 
-<!-- ═══ UTILITIES ═══ -->
-<div class="page" id="pg-utilities">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1545259741-2ea3ebf61fa3?w=1600&q=80')">
-    <div class="ph-ov" style="background:linear-gradient(160deg,rgba(5,8,20,.9) 0%,rgba(10,20,45,.65) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">UTILITY NETWORK GIS</span>
-      <h1 class="ph-title">Connecting your<br><span class="gold">network to the future</span></h1>
-      <p class="ph-sub">ArcGIS Utility Network migration, enterprise geodatabase administration, and field workflow deployment for Alberta's electric, gas, water, and telecom operators.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Discuss Your Project</button>
-    </div>
-  </section>
-  <div class="section">
-    <div class="intro-grid">
-      <div><span class="sec-ey">THE CHALLENGE</span><h2 class="sec-title">Geometric Network<br>is <span class="gold">being retired</span></h2></div>
-      <div>
-        <p class="i-body">Canadian utilities are in the middle of a mandatory migration from Esri's legacy Geometric Network to ArcGIS Utility Network. The new platform is more capable — but far more complex. Implementation requires specialized expertise that most utilities don't have in-house.</p>
-        <p class="i-body">Midspan holds the <strong style="color:var(--wh)">Esri ArcGIS Utility Network Associate certification</strong> and brings 15 years of utility GIS experience to every migration — making us one of the very few independent practitioners in Western Canada qualified to deliver this work professionally.</p>
-      </div>
-    </div>
-  </div>
-  <div style="background:#0D1829;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto"><span class="sec-ey">SERVICE LINES</span><h2 class="sec-title">What we <span class="gold">deliver</span></h2>
-    <div class="svcl-grid">
-      <div class="svcl-card"><span class="svcl-num">01</span><h3>Utility Network Migration</h3><ul class="svcl-list"><li>Migration planning and gap analysis from Geometric Network</li><li>Schema design: domain network, structure network, tier configuration</li><li>Terminal assignment and connectivity rule definition</li><li>Subnetwork definition, controller placement, tier management</li><li>Post-migration QA/QC and acceptance testing</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Get a migration assessment →</span></div>
-      <div class="svcl-card"><span class="svcl-num">02</span><h3>Enterprise Geodatabase</h3><ul class="svcl-list"><li>Geodatabase design on SQL Server and PostgreSQL</li><li>Branch versioning strategy and multi-user editing workflows</li><li>Geodatabase maintenance, compression, and optimization</li><li>Backup strategy and disaster recovery planning</li><li>Versioning migration (traditional to branch)</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Audit your geodatabase →</span></div>
-      <div class="svcl-card"><span class="svcl-num">03</span><h3>ArcGIS Enterprise Admin</h3><ul class="svcl-list"><li>Base deployment and federated server configuration</li><li>Active Directory / LDAP integration and security hardening</li><li>High-availability architecture and upgrade planning</li><li>Portal for ArcGIS configuration and role management</li><li>ArcGIS Enterprise on Kubernetes advisory</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Review your Enterprise setup →</span></div>
-      <div class="svcl-card"><span class="svcl-num">04</span><h3>Field Data Collection</h3><ul class="svcl-list"><li>ArcGIS Field Maps configuration and offline area setup</li><li>GNSS accuracy profile and high-accuracy receiver integration</li><li>Survey123 form design for field inspection workflows</li><li>Field-to-enterprise data integration and sync conflict resolution</li><li>Field crew training and change management</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Design your field workflow →</span></div>
-      <div class="svcl-card"><span class="svcl-num">05</span><h3>Network Tracing & Analysis</h3><ul class="svcl-list"><li>Upstream, downstream, and isolation trace configuration</li><li>Connected and loop trace analysis for operational planning</li><li>Protective device and isolation zone analysis</li><li>Pressure zone and district metered area mapping</li><li>Network diagram generation and subnetwork reporting</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Configure network tracing →</span></div>
-      <div class="svcl-card"><span class="svcl-num">06</span><h3>GIS Automation</h3><ul class="svcl-list"><li>Python (arcpy, GeoPandas) automation for recurring workflows</li><li>FME workspace development for ETL and data conversion</li><li>Automated map production and scheduled reporting</li><li>ArcGIS Dashboard configuration for operational monitoring</li><li>REST API integration with enterprise systems</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Automate your GIS →</span></div>
-    </div></div>
-  </div>
-  <div class="section">
-    <span class="sec-ey">SECTORS</span><h2 class="sec-title">Utility types <span class="gold">we serve</span></h2>
-    <div class="sector-grid">
-      <div class="sector-card"><div class="sector-icon">⚡</div><h4>Electric</h4><p>Transmission and distribution GIS, outage analytics, vegetation encroachment management</p></div>
-      <div class="sector-card"><div class="sector-icon">🔥</div><h4>Gas</h4><p>Distribution network GIS, HCA mapping, class location analysis, Pipeline Referencing</p></div>
-      <div class="sector-card"><div class="sector-icon">💧</div><h4>Water & Wastewater</h4><p>Distribution and collection network GIS, hydraulic model integration, cross-connection control</p></div>
-      <div class="sector-card"><div class="sector-icon">📡</div><h4>Telecom</h4><p>Fibre and cable network GIS, infrastructure inventory, coverage analysis</p></div>
-    </div>
-  </div>
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=70')">
-    <div class="cta-cnt"><h2>Planning a Utility Network migration?</h2><p>Talk to a certified specialist before you start. A 30-minute conversation can save months of rework.</p><button class="btn-p" onclick="showPage('home',true)">Book a Free Consultation</button></div>
-  </div>
-  <footer><div class="ft-inner"><div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div><div class="ft-links"><div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div><div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div></div></div><div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA</span></div></footer>
-</div>
+    <!-- About Content -->
+    <div class="about-content">
+      <h2>Why Midspan Geospatial</h2>
+      <p>Founded on a simple premise: <strong>clients deserve senior expertise on every project, not just the sales pitch.</strong> Midspan Geospatial delivers what large firms can't — direct access to a seasoned GIS professional who is accountable from discovery to delivery.</p>
+      <p>We serve utility companies, environmental consultancies, municipalities, and energy sector clients across Alberta, British Columbia, and Saskatchewan. Our platform-agnostic approach means we recommend what works, not what we're incentivized to sell.</p>
+      <p>From enterprise ArcGIS deployments to field drone surveys, from data migration to custom automation scripts, every solution is built to solve real operational problems — measurably.</p>
 
-<!-- ═══ ENVIRONMENTAL ═══ -->
-<div class="page" id="pg-environmental">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&q=80')">
-    <div class="ph-ov" style="background:linear-gradient(135deg,rgba(5,25,10,.88) 0%,rgba(10,30,20,.62) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">ENVIRONMENTAL GIS</span>
-      <h1 class="ph-title">Spatial intelligence<br><span class="gold">for the land</span></h1>
-      <p class="ph-sub">From permitting exhibits to reclamation monitoring — precise geospatial deliverables that hold up to AER, AEP, and ECCC regulatory scrutiny.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Discuss Your Project</button>
-    </div>
-  </section>
-  <div class="section">
-    <div class="intro-grid">
-      <div><span class="sec-ey">THE CONTEXT</span><h2 class="sec-title">Regulatory GIS<br>that <span class="gold">doesn't fail</span></h2></div>
-      <div>
-        <p class="i-body">Environmental consulting in Alberta runs on tight regulatory timelines and detailed spatial documentation requirements. A map that fails agency review doesn't just delay a project — it can derail it.</p>
-        <p class="i-body">Midspan delivers environmental GIS support as a specialist subconsultant and as a direct service to operators. We understand Alberta's regulatory landscape — AER, AEP, ECCC, and the Impact Assessment Act — and build that understanding into every exhibit we produce.</p>
-      </div>
-    </div>
-  </div>
-  <div style="background:#0A1A0F;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto"><span class="sec-ey">SERVICE LINES</span><h2 class="sec-title">What we <span class="gold">deliver</span></h2>
-    <div class="svcl-grid">
-      <div class="svcl-card"><span class="svcl-num">01</span><h3>Regulatory Mapping</h3><ul class="svcl-list"><li>Site location maps and project area delineation</li><li>Buffer zone and setback analysis to regulatory standards</li><li>Land use, zoning, and constraint overlay production</li><li>AER facility licensing and pipeline corridor exhibits</li><li>Federal and provincial EA project description figures</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Get permitting map support →</span></div>
-      <div class="svcl-card"><span class="svcl-num">02</span><h3>Environmental Site Assessment</h3><ul class="svcl-list"><li>Phase I/II ESA supporting maps and historical land use overlays</li><li>Contamination plume visualization and receptor proximity analysis</li><li>Sensitive feature identification and buffer mapping</li><li>Groundwater and water body proximity mapping</li><li>Figure production for ESA reports and submissions</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Support your ESA program →</span></div>
-      <div class="svcl-card"><span class="svcl-num">03</span><h3>Wetland & Habitat Mapping</h3><ul class="svcl-list"><li>Wetland delineation map production from field GPS data</li><li>Alberta Wetland Classification System alignment</li><li>Habitat polygon mapping and classification</li><li>Vegetation and land cover classification support</li><li>Wildlife sensitivity mapping and avoidance zones</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Map your wetland data →</span></div>
-      <div class="svcl-card"><span class="svcl-num">04</span><h3>Reclamation Monitoring</h3><ul class="svcl-list"><li>Pre/during/post-disturbance aerial survey integration</li><li>Disturbance footprint measurement and change detection</li><li>Reclamation progress mapping for certificate of reclamation</li><li>Drone-based current-season imagery (no satellite lag)</li><li>Recurring monitoring report figure automation</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Set up monitoring →</span></div>
-      <div class="svcl-card"><span class="svcl-num">05</span><h3>Indigenous Consultation Mapping</h3><ul class="svcl-list"><li>Traditional land use area delineation and overlay</li><li>Engagement area visualization and notification mapping</li><li>Project footprint vs TLU area intersection analysis</li><li>Consultation record spatial documentation</li><li>Confidential spatial data handling protocols</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Discuss consultation mapping →</span></div>
-      <div class="svcl-card"><span class="svcl-num">06</span><h3>Data Quality & Metadata</h3><ul class="svcl-list"><li>NSSDA positional accuracy assessment and reporting</li><li>FGDC / ISO 19115 metadata creation and management</li><li>Topology validation and spatial data QA/QC</li><li>Coordinate system review and datum transformation</li><li>Data quality audit for regulatory data packages</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Audit your spatial data →</span></div>
-    </div></div>
-  </div>
-  <div class="section">
-    <span class="sec-ey">WHO WE SUPPORT</span><h2 class="sec-title">Built for <span class="gold">subconsultants</span></h2>
-    <div class="sector-grid">
-      <div class="sector-card"><div class="sector-icon">🌿</div><h4>Environmental Firms</h4><p>Overflow GIS capacity for Stantec, WSP, Tetra Tech, GHD, and boutique Alberta firms during peak permitting seasons</p></div>
-      <div class="sector-card"><div class="sector-icon">⚙️</div><h4>Engineering Firms</h4><p>GIS subconsultant support for engineering firms without dedicated GIS staff — from single figures to full data packages</p></div>
-      <div class="sector-card"><div class="sector-icon">🛢️</div><h4>Oil, Gas & Pipeline</h4><p>HCA delineation, class location mapping, and pipeline corridor GIS for AER regulatory compliance</p></div>
-      <div class="sector-card"><div class="sector-icon">🏗️</div><h4>Construction & Development</h4><p>Pre-construction environmental constraint mapping and development permit support</p></div>
-    </div>
-  </div>
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=70')">
-    <div class="cta-cnt"><h2>Permitting deadline approaching?</h2><p>Midspan can mobilize quickly for urgent deliverables. Reach out today to discuss your timeline.</p><button class="btn-p" onclick="showPage('home',true)">Get Urgent GIS Support</button></div>
-  </div>
-  <footer><div class="ft-inner"><div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div><div class="ft-links"><div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div><div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div></div></div><div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA</span></div></footer>
-</div>
-
-<!-- ═══ MUNICIPAL ═══ -->
-<div class="page" id="pg-municipal">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1600&q=80')">
-    <div class="ph-ov" style="background:linear-gradient(135deg,rgba(10,15,40,.9) 0%,rgba(20,30,60,.62) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">MUNICIPAL & GOVERNMENT GIS</span>
-      <h1 class="ph-title">Smarter cities<br><span class="gold">better services</span></h1>
-      <p class="ph-sub">Asset inventory, web GIS portals, capital planning maps, and open data platforms for Alberta municipalities, counties, and regional governments.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Talk to Us</button>
-    </div>
-  </section>
-  <div class="section">
-    <div class="intro-grid">
-      <div><span class="sec-ey">THE OPPORTUNITY</span><h2 class="sec-title">Most Alberta towns<br>lack <span class="gold">GIS capacity</span></h2></div>
-      <div>
-        <p class="i-body">Smaller Alberta municipalities often have no dedicated GIS staff — yet they manage complex asset inventories, respond to public information requests, and submit capital budgets that depend on accurate spatial data. Midspan fills that gap as a flexible, on-demand GIS resource without the cost of a full-time hire.</p>
-        <p class="i-body">For larger municipalities and counties, we provide specialized capacity for specific projects — ArcGIS Enterprise deployments, web map development, or data migration — where internal teams need focused expert support.</p>
-      </div>
-    </div>
-  </div>
-  <div style="background:#0D1020;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto"><span class="sec-ey">SERVICE LINES</span><h2 class="sec-title">What we <span class="gold">deliver</span></h2>
-    <div class="svcl-grid">
-      <div class="svcl-card"><span class="svcl-num">01</span><h3>Asset Inventory</h3><ul class="svcl-list"><li>Roads, sidewalks, signs, lights, and parks asset inventory</li><li>Condition assessment data collection and mapping</li><li>Asset lifecycle tracking and replacement planning maps</li><li>Integration with work order and CMMS systems</li><li>Capital replacement priority mapping for budget planning</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Start your asset inventory →</span></div>
-      <div class="svcl-card"><span class="svcl-num">02</span><h3>Web GIS & Public Portals</h3><ul class="svcl-list"><li>ArcGIS Online and Portal for ArcGIS configuration</li><li>Public-facing property inquiry and zoning web maps</li><li>ArcGIS Hub open data portal setup and management</li><li>Interactive maps for community engagement</li><li>ArcGIS Experience Builder custom web applications</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Build your public portal →</span></div>
-      <div class="svcl-card"><span class="svcl-num">03</span><h3>Zoning & Land Use</h3><ul class="svcl-list"><li>Zoning bylaw map production and maintenance</li><li>Land use redesignation and development permit mapping</li><li>Area structure plan and outline plan map support</li><li>Parcel data management and ownership overlay</li><li>Municipal development plan spatial exhibits</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Update your zoning maps →</span></div>
-      <div class="svcl-card"><span class="svcl-num">04</span><h3>Capital Planning</h3><ul class="svcl-list"><li>Capital project spatial planning and prioritization maps</li><li>Infrastructure age and condition overlay analysis</li><li>Grant application mapping and spatial exhibits</li><li>Growth area and servicing extension planning</li><li>Population and demographic spatial analysis</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Map your capital program →</span></div>
-      <div class="svcl-card"><span class="svcl-num">05</span><h3>Emergency & Operations</h3><ul class="svcl-list"><li>Emergency response mapping and evacuation route GIS</li><li>Flood risk and hazard area mapping</li><li>Operations dashboards for public works departments</li><li>Snow route and gravel road network GIS</li><li>Fire response coverage and station location analysis</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Strengthen operations GIS →</span></div>
-      <div class="svcl-card"><span class="svcl-num">06</span><h3>ArcGIS Enterprise</h3><ul class="svcl-list"><li>ArcGIS Enterprise deployment and configuration</li><li>Security and Active Directory integration</li><li>Staff training and GIS capacity building</li><li>Data migration from legacy systems</li><li>Ongoing retainer support for GIS-light municipalities</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Modernize your GIS →</span></div>
-    </div></div>
-  </div>
-  <div class="section">
-    <span class="sec-ey">HOW WE ENGAGE</span><h2 class="sec-title">Procurement <span class="gold">pathways</span></h2>
-    <div class="sector-grid">
-      <div class="sector-card"><div class="sector-icon">📋</div><h4>Alberta Purchasing Connection</h4></div>
-      <div class="sector-card"><div class="sector-icon">🏙️</div><h4>Bids and Tenders</h4></div>
-      <div class="sector-card"><div class="sector-icon">🤝</div><h4>Direct Engagement</h4></div>
-      <div class="sector-card"><div class="sector-icon">📅</div><h4>Retainer Support</h4></div>
-    </div>
-  </div>
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1400&q=70')">
-    <div class="cta-cnt"><h2>No in-house GIS staff?</h2><p>Midspan provides municipalities with expert GIS capacity on demand — without the cost of a full-time position.</p><button class="btn-p" onclick="showPage('home',true)">Explore a Retainer Arrangement</button></div>
-  </div>
-  <footer><div class="ft-inner"><div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div><div class="ft-links"><div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div><div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div></div></div><div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA</span></div></footer>
-</div>
-
-<!-- ═══ DRONE ═══ -->
-<div class="page" id="pg-drone">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=1600&q=80');min-height:70vh">
-    <div class="ph-ov" style="background:linear-gradient(160deg,rgba(5,5,20,.92) 0%,rgba(15,15,40,.58) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">DRONE MAPPING & AERIAL DATA CAPTURE</span>
-      <h1 class="ph-title">Capture to<br><span class="gold">GIS-ready</span></h1>
-      <p class="ph-sub">Transport Canada Advanced RPAS operations with full in-house GIS processing. One provider. One workflow. Survey-grade results delivered directly to your ArcGIS environment.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Plan Your Survey</button>
-    </div>
-  </section>
-  <div class="cert-bar">
-    <div class="cb-item"><span class="cb-badge">TC ADVANCED</span><p class="cb-text">Transport Canada Advanced RPAS — controlled airspace, complex operations, commercial flights</p></div>
-    <div class="cb-div"></div>
-    <div class="cb-item"><span class="cb-badge">GIS INTEGRATED</span><p class="cb-text">Aerial data processed and delivered as production-ready ArcGIS layers — no third-party handoff</p></div>
-    <div class="cb-div"></div>
-    <div class="cb-item"><span class="cb-badge">INSURED</span><p class="cb-text">Hull, payload, and commercial liability RPAS insurance — required by utility and energy sector clients</p></div>
-  </div>
-  <div class="section">
-    <div class="intro-grid">
-      <div><span class="sec-ey">THE DIFFERENCE</span><h2 class="sec-title">The gap between<br><span class="gold">drone and GIS</span></h2></div>
-      <div>
-        <p class="i-body">Most drone mapping engagements involve two separate vendors: a drone operator who captures data and a GIS team that processes it. The handoff between them introduces delays, interpretation errors, and coordinate system mismatches that erode the value of the original survey.</p>
-        <p class="i-body">Midspan eliminates that gap. With a Transport Canada Advanced RPAS certificate and 15 years of GIS expertise under one roof, we capture, process, georeference, and integrate aerial data directly into your ArcGIS environment — delivering production-ready layers, not just raw imagery.</p>
-      </div>
-    </div>
-  </div>
-  <div style="background:#050510;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto"><span class="sec-ey">SERVICE LINES</span><h2 class="sec-title">What we <span class="gold">deliver</span></h2>
-    <div class="svcl-grid">
-      <div class="svcl-card"><span class="svcl-num">01</span><h3>Utility Corridor Mapping</h3><ul class="svcl-list"><li>Powerline patrol orthomosaics for transmission and distribution</li><li>Vegetation encroachment mapping and clearance analysis</li><li>Thermal anomaly detection along corridors</li><li>Right-of-way condition documentation</li><li>Results delivered as ArcGIS-ready raster and vector layers</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Plan your corridor survey →</span></div>
-      <div class="svcl-card"><span class="svcl-num">02</span><h3>Infrastructure Inspection</h3><ul class="svcl-list"><li>Visual inspection of towers, substations, and storage tanks</li><li>Pipeline and bridge inspection with georeferenced defect log</li><li>High-resolution RGB and thermal capture</li><li>Defect documentation integrated into GIS asset records</li><li>Before/after comparison for maintenance planning</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Schedule an inspection →</span></div>
-      <div class="svcl-card"><span class="svcl-num">03</span><h3>Photogrammetric Mapping</h3><ul class="svcl-list"><li>High-resolution orthophoto production (sub-5cm GSD)</li><li>Digital Surface Model and bare-earth DTM generation</li><li>Dense point cloud production for volume and terrain analysis</li><li>Processed in Pix4D or Agisoft Metashape</li><li>NSSDA-compliant accuracy with GCP ground control</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Get a mapping quote →</span></div>
-      <div class="svcl-card"><span class="svcl-num">04</span><h3>Reclamation & Environmental</h3><ul class="svcl-list"><li>Seasonal reclamation progress surveys</li><li>Disturbance footprint measurement and change detection</li><li>Current-season imagery for regulatory exhibits</li><li>Wetland and habitat aerial assessment support</li><li>Before/during/after disturbance documentation</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Set up reclamation surveys →</span></div>
-      <div class="svcl-card"><span class="svcl-num">05</span><h3>Construction Surveys</h3><ul class="svcl-list"><li>Periodic progress orthomosaics for stakeholder reporting</li><li>Earthworks volume calculation from drone-derived DTMs</li><li>Site documentation for regulatory and insurance purposes</li><li>Cut/fill analysis for grading verification</li><li>Scheduled recurring flights with automated deliverables</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Schedule progress surveys →</span></div>
-      <div class="svcl-card"><span class="svcl-num">06</span><h3>ArcGIS Integration</h3><ul class="svcl-list"><li>Orthomosaic and DEM loading into ArcGIS Enterprise or Online</li><li>Point cloud integration with ArcGIS Pro 3D analysis</li><li>Drone-derived basemaps for ArcGIS Field Maps</li><li>Automated update pipelines for recurring survey areas</li><li>Imagery tile service publishing for portal sharing</li></ul><span class="svcl-cta" onclick="showPage('home',true)">Integrate drone data →</span></div>
-    </div></div>
-  </div>
-  <div class="section">
-    <span class="sec-ey">OUR PLATFORM</span><h2 class="sec-title">Built for <span class="gold">precision</span></h2>
-    <div class="plat-grid">
-      <div class="plat-card"><span class="plat-lbl">HARDWARE</span><strong>DJI Mavic 3 Enterprise</strong><p>RGB, radiometric thermal, and multispectral payloads. RTK positioning module for survey-grade accuracy without ground control points.</p></div>
-      <div class="plat-card"><span class="plat-lbl">PROCESSING</span><strong>Pix4D + Agisoft Metashape</strong><p>Industry-standard photogrammetric processing for orthomosaics, point clouds, and DEMs. NSSDA-compliant accuracy reporting on all deliverables.</p></div>
-      <div class="plat-card"><span class="plat-lbl">FLIGHT PLANNING</span><strong>DJI FlightHub 2 + Pix4Dcapture</strong><p>Systematic mission planning with overlap, GSD, and altitude parameters optimized per project type and accuracy requirement.</p></div>
-      <div class="plat-card"><span class="plat-lbl">REGULATORY</span><strong>CARs Part IX Compliant</strong><p>All operations conducted under Canadian Aviation Regulations Part IX RPAS provisions. Nav Canada RPAS portal authorization for controlled airspace.</p></div>
-    </div>
-  </div>
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=1400&q=70')">
-    <div class="cta-cnt"><h2>From the air to ArcGIS.</h2><p>One call replaces two vendors. Midspan handles capture, processing, and GIS integration end-to-end.</p><button class="btn-p" onclick="showPage('home',true)">Get a Drone Mapping Quote</button></div>
-  </div>
-  <footer><div class="ft-inner"><div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div><div class="ft-links"><div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div><div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div></div></div><div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA</span></div></footer>
-</div>
-
-<!-- ═══ ABOUT ═══ -->
-<div class="page" id="pg-about">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1600&q=80');min-height:60vh">
-    <div class="ph-ov" style="background:linear-gradient(160deg,rgba(8,12,30,.94) 0%,rgba(15,20,55,.62) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">ABOUT MIDSPAN GEOSPATIAL</span>
-      <h1 class="ph-title">15 years of GIS.<br><span class="gold">One practitioner.</span><br>Your work.</h1>
-      <p class="ph-sub">No junior staff. No project handoffs. Every engagement delivered by the certified principal who signs the proposal.</p>
-    </div>
-  </section>
-
-  <div class="section">
-    <div class="about-grid">
-      <div>
-        <div class="photo-ph"><div class="photo-init">IB</div><span class="photo-name">IBE EZUMA <br>GISP</span></div>
-        <div class="cert-stack">
-          <div class="cert-row"><span class="cert-abbr">GISP</span><span class="cert-name">GIS Certification Institute</span></div>
-          <div class="cert-row"><span class="cert-abbr">ESRI ✓</span><span class="cert-name">ArcGIS Pro Desktop Professional</span></div>
-          <div class="cert-row"><span class="cert-abbr">ESRI ✓</span><span class="cert-name">Enterprise Administration</span></div>
-          <div class="cert-row"><span class="cert-abbr">ESRI ✓</span><span class="cert-name">Utility Network Associate</span></div>
-          <div class="cert-row"><span class="cert-abbr">TC ✓</span><span class="cert-name">Advanced RPAS Pilot Certificate</span></div>
-        </div>
-        <a href="https://www.linkedin.com/in/ibe-ezuma-gisp%C2%AE-39774a3a" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.6rem;font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:#C8A96E;border:1px solid rgba(200,169,110,.3);padding:.7rem 1rem;margin-top:1.25rem;transition:background .2s;width:100%;justify-content:center" onmouseover="this.style.background='rgba(200,169,110,.08)'" onmouseout="this.style.background='none'">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C8A96E"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          View LinkedIn Profile
-        </a>
-      </div>
-      <div>
-        <span class="sec-ey">THE PRINCIPAL</span>
-        <h2 class="sec-title">Built on<br><span class="gold">earned expertise</span></h2>
-        <p class="bio-body" style="margin-top:1.25rem">Ibe is a GISP-certified Geographic Information Systems Professional with over 15 years of hands-on GIS experience across electric, gas, water, environmental, and engineering sectors. Based in Calgary, Alberta, Ibe founded Midspan Geospatial Ltd to deliver the technical depth of a large GIS consultancy with the direct accountability of a sole practitioner.</p>
-        <p class="bio-body">Over a decade and a half, Ibe has built expertise spanning the full ArcGIS enterprise stack — from legacy Geometric Network migrations to current-generation Utility Network implementations, from enterprise geodatabase design on SQL Server to drone photogrammetry integrated directly into ArcGIS Online. The breadth is real, and it is backed by credentials that are objective and verifiable.</p>
-        <p class="bio-body">Clients across Western Canada's utility, environmental, and engineering sectors choose Midspan because they get the certified expert on every call, every deliverable, every project — not a salesperson followed by a junior analyst.</p>
-        <div class="bio-stats">
-          <div class="bs"><span class="bs-n">15<span class="gold">+</span></span><span class="bs-l">Years GIS Experience</span></div>
-          <div class="bs"><span class="bs-n">4<span class="gold">×</span></span><span class="bs-l">Major Certifications</span></div>
-          <div class="bs"><span class="bs-n">YYC</span><span class="bs-l">Calgary, Alberta</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div style="background:#080D1A;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto">
-      <span class="sec-ey">CREDENTIALS IN DETAIL</span>
-      <h2 class="sec-title">What the certifications<br><span class="gold">actually mean</span></h2>
-      <div class="cred-grid">
-        <div class="cred-card"><div class="cred-head"><span class="cred-abbr">GISP</span><div><div class="cred-title">Geographic Information Systems Professional</div><span class="cred-issuer">GIS Certification Institute (GISCI)</span></div></div><p class="cred-desc">The GISP is the only internationally recognized, vendor-neutral professional credential in GIS. Held by fewer than 30,000 practitioners worldwide, it validates education, professional experience, and contributions to the profession. Government and utility clients increasingly require or score the GISP in formal procurement evaluation criteria.</p><div class="cred-tags"><span class="tag">International standard</span><span class="tag">Vendor-neutral</span><span class="tag">Procurement-scored</span></div></div>
-        <div class="cred-card"><div class="cred-head"><span class="cred-abbr">UN</span><div><div class="cred-title">ArcGIS Utility Network Associate</div><span class="cred-issuer">Esri Technical Certification</span></div></div><p class="cred-desc">ArcGIS Utility Network is Esri's current-generation utility data model, replacing the legacy Geometric Network across the industry. This certification validates hands-on knowledge of domain networks, structure networks, subnetwork configuration, trace networks, and connectivity rules — the core components of every UN implementation. One of the most technically demanding Esri certifications available.</p><div class="cred-tags"><span class="tag">Highest-demand Esri cert</span><span class="tag">Migration expertise</span><span class="tag">Rare independent credential</span></div></div>
-        <div class="cred-card"><div class="cred-head"><span class="cred-abbr">EA</span><div><div class="cred-title">ArcGIS Enterprise Administration</div><span class="cred-issuer">Esri Technical Certification</span></div></div><p class="cred-desc">Validates competency across the full ArcGIS Enterprise stack: Portal, ArcGIS Server, Data Store, and Web Adaptor deployment; federated server configuration; Active Directory integration; security hardening; high-availability architecture; and upgrade management. Enables Midspan to deliver end-to-end ArcGIS platform work without a separate infrastructure vendor.</p><div class="cred-tags"><span class="tag">Full-stack delivery</span><span class="tag">Security & HA architecture</span><span class="tag">Reduces vendor count</span></div></div>
-        <div class="cred-card"><div class="cred-head"><span class="cred-abbr">RPAS</span><div><div class="cred-title">Transport Canada Advanced RPAS Pilot Certificate</div><span class="cred-issuer">Transport Canada</span></div></div><p class="cred-desc">The Advanced RPAS certificate is Transport Canada's higher-tier drone pilot credential, authorizing operations in controlled airspace, complex operational environments, and over bystanders. Required by most commercial clients, insurers, and Alberta energy sector operators as a condition of site access for drone operations.</p><div class="cred-tags"><span class="tag">Controlled airspace ops</span><span class="tag">Commercial site access</span><span class="tag">CARs Part IX compliant</span></div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <span class="sec-ey">TECHNICAL SKILLS</span>
-    <h2 class="sec-title">15 years of <span class="gold">platform depth</span></h2>
-    <div class="tech-grid">
-      <div><span class="tech-head">GIS PLATFORMS</span><ul class="tech-list"><li>ArcGIS Pro — advanced</li><li>ArcGIS Enterprise (Portal, Server, Data Store)</li><li>ArcGIS Online</li><li>ArcGIS Field Maps</li><li>Survey123</li><li>ArcGIS Utility Network</li><li>ArcGIS Dashboards & Experience Builder</li></ul></div>
-      <div><span class="tech-head">DATABASE & AUTOMATION</span><ul class="tech-list"><li>Microsoft SQL Server & ArcSDE</li><li>PostgreSQL / PostGIS</li><li>Python — arcpy, GeoPandas, Pandas</li><li>FME Desktop & Server</li><li>ModelBuilder</li><li>ArcGIS REST API</li><li>PowerShell</li></ul></div>
-      <div><span class="tech-head">DRONE & REMOTE SENSING</span><ul class="tech-list"><li>DJI Mavic 3 Enterprise</li><li>Pix4Dmapper / Pix4Dmatic</li><li>Agisoft Metashape</li><li>DJI FlightHub 2 / Pix4Dcapture</li><li>ArcGIS Image Analyst</li><li>GDAL / OGR</li></ul></div>
-      <div><span class="tech-head">STANDARDS & COMPLIANCE</span><ul class="tech-list"><li>NSSDA positional accuracy</li><li>FGDC / ISO 19115 metadata</li><li>AER / AEP regulatory GIS standards</li><li>NAD83 / NAVD88 / UTM Zone 11–12</li><li>OGC web services (WMS, WFS)</li><li>CARs Part IX (RPAS)</li></ul></div>
-    </div>
-  </div>
-
-  <div style="background:#080D1A;padding:4rem 1.5rem">
-    <div style="max-width:1200px;margin:0 auto">
-      <div class="philo-grid">
-        <div><span class="sec-ey">OUR PHILOSOPHY</span><h2 class="sec-title">The <span class="gold">midpoint</span><br>matters</h2></div>
-        <div>
-          <blockquote>"The name Midspan references the critical midpoint of a utility infrastructure span — the point at which precision matters most, where the weight of a project transfers from design to reality. We operate at that same midpoint: between raw spatial data and the operational decisions that shape infrastructure, land, and communities."</blockquote>
-          <p class="bio-body" style="font-size:.8rem">Midspan Geospatial was founded on a belief that certified expertise and direct accountability produce better outcomes than organizational size. Clients working with us know exactly who is responsible for every map, every dataset, every implementation decision — and that person is reachable, accountable, and committed to their project's success.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <span class="sec-ey">HOW WE WORK</span>
-    <h2 class="sec-title" style="text-align:center;margin-bottom:0">Core <span class="gold">commitments</span></h2>
-    <div class="val-grid">
-      <div class="val-card"><div class="val-icon">◈</div><h4>Technical Excellence</h4><p>NSSDA-compliant accuracy, FGDC-compliant metadata, and rigorous QA/QC on every deliverable. No shortcuts, regardless of timeline pressure.</p></div>
-      <div class="val-card"><div class="val-icon">◈</div><h4>Direct Accountability</h4><p>The GISP designation carries a professional Code of Ethics. Every engagement is conducted under that standard — not just a contractual obligation.</p></div>
-      <div class="val-card"><div class="val-icon">◈</div><h4>Regulatory Fluency</h4><p>Alberta's regulatory landscape — AER, AEP, ECCC, Impact Assessment Act — is built into deliverables from the start, not retrofitted at review.</p></div>
-      <div class="val-card"><div class="val-icon">◈</div><h4>Operational Focus</h4><p>GIS is a tool for decisions, not an end in itself. Every dataset, map, and workflow is designed around how the client will actually use it.</p></div>
-    </div>
-  </div>
-
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=1400&q=70')">
-    <div class="cta-cnt"><h2>Let's work together.</h2><p>Whether you have a defined project or an evolving GIS challenge — start with a conversation.</p><button class="btn-p" onclick="showPage('home',true)">Get In Touch</button></div>
-  </div>
-
-  <footer>
-    <div class="ft-inner">
-      <div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div>
-      <div class="ft-links">
-        <div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div>
-        <div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div>
-        <div class="ft-col"><h5>Certifications</h5><span>GISP — GISCI</span><span>ArcGIS Pro Professional</span><span>ArcGIS Enterprise Admin</span><span>Utility Network Associate</span><span>TC Advanced RPAS</span></div>
-      </div>
-    </div>
-    <div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA · ALL RIGHTS RESERVED</span><span>GST/HST REGISTERED</span></div>
-  </footer>
-</div>
-
-<!-- ═══ PROJECTS ═══ -->
-<div class="page" id="pg-projects">
-  <section class="ph" style="background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1600&q=80');min-height:60vh">
-    <div class="ph-ov" style="background:linear-gradient(160deg,rgba(6,10,25,.92) 0%,rgba(12,22,50,.65) 100%)"></div>
-    <div class="ph-cnt">
-      <span class="eyebrow">PROJECT CAPABILITIES</span>
-      <h1 class="ph-title">Delivered with<br><span class="gold">precision</span></h1>
-      <p class="ph-sub">Representative project capabilities across utility network, enterprise GIS, environmental, municipal, and drone mapping disciplines — reflecting 15 years of hands-on delivery.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Start Your Project</button>
-    </div>
-  </section>
-
-  <!-- FILTER BAR -->
-  <div style="background:rgba(10,15,30,.98);border-bottom:1px solid rgba(46,117,182,.15);padding:.75rem 1.5rem;position:sticky;top:56px;z-index:50">
-    <div style="max-width:1200px;margin:0 auto;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
-      <span style="font-family:var(--fm);font-size:.58rem;letter-spacing:.15em;color:var(--mt);margin-right:.5rem">FILTER:</span>
-      <button class="filter-btn active" onclick="filterProjects('all')">All</button>
-      <button class="filter-btn" onclick="filterProjects('utilities')">Utility Network</button>
-      <button class="filter-btn" onclick="filterProjects('enterprise')">Enterprise GIS</button>
-      <button class="filter-btn" onclick="filterProjects('environmental')">Environmental</button>
-      <button class="filter-btn" onclick="filterProjects('municipal')">Municipal</button>
-      <button class="filter-btn" onclick="filterProjects('drone')">Drone Mapping</button>
-      <button class="filter-btn" onclick="filterProjects('automation')">Automation</button>
-    </div>
-  </div>
-
-  <style>
-    .filter-btn{font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--mt);background:none;border:1px solid rgba(255,255,255,.1);padding:.35rem .8rem;cursor:pointer;transition:all .2s;border-radius:2px}
-    .filter-btn:hover{color:var(--wh);border-color:rgba(255,255,255,.3)}
-    .filter-btn.active{color:var(--gd);border-color:rgba(200,169,110,.5);background:rgba(200,169,110,.07)}
-    .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem}
-    @media(max-width:900px){.proj-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:560px){.proj-grid{grid-template-columns:1fr}}
-    .proj-card{background:var(--cb);border:1px solid rgba(46,117,182,.12);overflow:hidden;transition:border-color .3s,transform .3s;cursor:pointer}
-    .proj-card:hover{border-color:rgba(200,169,110,.35);transform:translateY(-3px)}
-    .proj-img{height:180px;background-size:cover;background-position:center;position:relative}
-    .proj-cat{position:absolute;top:.75rem;left:.75rem;font-family:var(--fm);font-size:.55rem;letter-spacing:.15em;color:var(--gd);background:rgba(5,8,20,.85);border:1px solid rgba(200,169,110,.3);padding:.2rem .55rem}
-    .proj-body{padding:1.5rem}
-    .proj-client{font-family:var(--fm);font-size:.58rem;letter-spacing:.12em;color:var(--mt);margin-bottom:.4rem;display:block}
-    .proj-title{font-family:var(--ff);font-size:1.3rem;color:var(--wh);letter-spacing:.02em;margin-bottom:.6rem;line-height:1.1}
-    .proj-desc{font-size:.75rem;line-height:1.65;color:var(--mt);margin-bottom:1rem}
-    .proj-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
-    .proj-tag{font-family:var(--fm);font-size:.52rem;letter-spacing:.08em;color:var(--mt);border:1px solid rgba(255,255,255,.08);padding:.15rem .45rem}
-    .proj-outcome{display:flex;align-items:flex-start;gap:.5rem;padding:.75rem;background:rgba(200,169,110,.04);border-top:1px solid rgba(200,169,110,.12)}
-    .proj-outcome-icon{color:var(--gd);font-size:.8rem;flex-shrink:0;margin-top:.05rem}
-    .proj-outcome-text{font-size:.72rem;line-height:1.55;color:var(--ow)}
-    .proj-card.hidden{display:none}
-
-    /* FEATURED card */
-    .proj-card.featured{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr}
-    @media(max-width:900px){.proj-card.featured{grid-column:span 1;display:block}}
-    .proj-card.featured .proj-img{height:100%;min-height:220px}
-    @media(max-width:900px){.proj-card.featured .proj-img{height:200px}}
-
-    /* METRICS strip */
-    .metrics-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:3rem;border:1px solid rgba(46,117,182,.12)}
-    @media(max-width:700px){.metrics-strip{grid-template-columns:repeat(2,1fr)}}
-    .metric-card{background:var(--cb);padding:2rem 1.5rem;text-align:center;border-right:1px solid rgba(46,117,182,.1)}
-    .metric-card:last-child{border-right:none}
-    .metric-num{font-family:var(--ff);font-size:2.8rem;color:var(--gd);letter-spacing:.02em;display:block}
-    .metric-lbl{font-family:var(--fm);font-size:.6rem;letter-spacing:.15em;color:var(--mt);margin-top:.3rem;display:block}
-
-    /* TESTIMONIALS */
-    .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem}
-    @media(max-width:800px){.testi-grid{grid-template-columns:1fr}}
-    .testi-card{background:var(--cb);padding:1.75rem;border-left:2px solid var(--gd);border-top:1px solid rgba(46,117,182,.1)}
-    .testi-quote{font-size:.82rem;line-height:1.8;color:var(--ow);font-style:italic;margin-bottom:1.25rem}
-    .testi-attr{font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;color:var(--mt)}
-    .testi-role{font-size:.72rem;color:var(--mt);margin-top:.2rem}
-  </style>
-
-  <!-- METRICS -->
-  <div style="background:var(--nv2);padding:3rem 0">
-    <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem">
-      <div class="metrics-strip">
-        <div class="metric-card"><span class="metric-num">15<span style="font-size:1.8rem">+</span></span><span class="metric-lbl">Years of GIS Delivery</span></div>
-        <div class="metric-card"><span class="metric-num">4</span><span class="metric-lbl">Industry Sectors Served</span></div>
-        <div class="metric-card"><span class="metric-num">UN</span><span class="metric-lbl">Utility Network Implementations</span></div>
-        <div class="metric-card"><span class="metric-num">100<span style="font-size:1.8rem">%</span></span><span class="metric-lbl">Principal-Led Delivery</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROJECTS GRID -->
-  <div class="section">
-    <span class="sec-ey">REPRESENTATIVE CAPABILITIES</span>
-    <h2 class="sec-title">Project <span class="gold">highlights</span></h2>
-    <p style="font-size:.8rem;color:var(--mt);margin-top:.75rem;font-style:italic">Note: Client names are withheld in accordance with confidentiality obligations. Projects represent capabilities demonstrated across engagements.</p>
-
-    <div class="proj-grid" id="projGrid">
-
-      <!-- FEATURED: UN Migration -->
-      <div class="proj-card featured" data-cat="utilities">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1545259741-2ea3ebf61fa3?w=800&q=70')">
-          <span class="proj-cat">UTILITY NETWORK</span>
-        </div>
-        <div style="display:flex;flex-direction:column">
-          <div class="proj-body" style="flex:1">
-            <span class="proj-client">WESTERN CANADA ELECTRIC UTILITY</span>
-            <h3 class="proj-title">Geometric Network to Utility Network Migration</h3>
-            <p class="proj-desc">Full migration of a regional electric distribution network from ArcGIS Geometric Network to ArcGIS Utility Network. Included domain network schema design, structure network configuration, subnetwork and tier definition, terminal assignment, connectivity rule development, and post-migration QA/QC validation across 40,000+ network features.</p>
-            <div class="proj-tags"><span class="proj-tag">ArcGIS Utility Network</span><span class="proj-tag">Schema Design</span><span class="proj-tag">Migration</span><span class="proj-tag">QA/QC</span><span class="proj-tag">SQL Server</span></div>
+      <ul class="values-list">
+        <li>
+          <span class="val-num">01</span>
+          <div class="val-content">
+            <h4>Principal-Led Delivery</h4>
+            <p>The person you meet in the discovery call is the person who does the work. No hand-offs to juniors, no offshore processing.</p>
           </div>
-          <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Successfully migrated full network to ArcGIS Utility Network with connectivity validation passing on 99.8% of features at project close.</span></div>
-        </div>
-      </div>
-
-      <!-- Enterprise Geodatabase -->
-      <div class="proj-card" data-cat="enterprise">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=70')">
-          <span class="proj-cat">ENTERPRISE GIS</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">MID-SIZE GAS DISTRIBUTION UTILITY</span>
-          <h3 class="proj-title">Branch Versioning Migration & Geodatabase Optimization</h3>
-          <p class="proj-desc">Designed and implemented a branch versioning strategy to replace traditional versioning, enabling concurrent field and office editing without conflict bottlenecks. Included geodatabase maintenance automation via Python and scheduled compression workflows.</p>
-          <div class="proj-tags"><span class="proj-tag">Branch Versioning</span><span class="proj-tag">PostgreSQL</span><span class="proj-tag">arcpy</span><span class="proj-tag">Performance</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Reduced version conflict resolution time by ~70% and eliminated weekly maintenance windows through automation.</span></div>
-      </div>
-
-      <!-- Field Maps -->
-      <div class="proj-card" data-cat="utilities">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&q=70')">
-          <span class="proj-cat">FIELD WORKFLOWS</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">WATER DISTRIBUTION UTILITY</span>
-          <h3 class="proj-title">ArcGIS Field Maps Inspection Workflow Deployment</h3>
-          <p class="proj-desc">Designed and deployed a field inspection workflow for hydrant, valve, and service connection inspection using ArcGIS Field Maps with high-accuracy GNSS integration. Configured offline map areas, sync workflows, and enterprise geodatabase integration for 8 field crews.</p>
-          <div class="proj-tags"><span class="proj-tag">Field Maps</span><span class="proj-tag">Survey123</span><span class="proj-tag">GNSS</span><span class="proj-tag">Offline</span><span class="proj-tag">Training</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Replaced paper-based inspection process — field data available in enterprise GIS within minutes of crew sync.</span></div>
-      </div>
-
-      <!-- ArcGIS Enterprise -->
-      <div class="proj-card" data-cat="enterprise">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=70')">
-          <span class="proj-cat">ENTERPRISE ADMIN</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ALBERTA REGIONAL ENGINEERING FIRM</span>
-          <h3 class="proj-title">ArcGIS Enterprise Deployment & Security Configuration</h3>
-          <p class="proj-desc">Designed and implemented a distributed ArcGIS Enterprise deployment including Portal for ArcGIS, ArcGIS Server, and Data Store on Windows Server. Configured Active Directory integration, role-based access control, Web Adaptor with reverse proxy, and SSL certificates for external access.</p>
-          <div class="proj-tags"><span class="proj-tag">ArcGIS Enterprise</span><span class="proj-tag">Active Directory</span><span class="proj-tag">Security</span><span class="proj-tag">Web Adaptor</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Deployed production Enterprise environment from scratch, passing internal IT security review on first submission.</span></div>
-      </div>
-
-      <!-- Environmental Permitting -->
-      <div class="proj-card" data-cat="environmental">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=70')">
-          <span class="proj-cat">ENVIRONMENTAL</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ENVIRONMENTAL CONSULTING FIRM (SUBCONSULTANT)</span>
-          <h3 class="proj-title">AER Regulatory Permitting Map Package</h3>
-          <p class="proj-desc">Produced a full GIS map package for an Alberta Energy Regulator facility application including site location, project area, environmental constraint overlays, buffer zones, sensitive feature proximity, and land use maps. Delivered to AER submission specifications with FGDC-compliant metadata.</p>
-          <div class="proj-tags"><span class="proj-tag">AER Submission</span><span class="proj-tag">Regulatory Mapping</span><span class="proj-tag">FGDC Metadata</span><span class="proj-tag">Constraint Analysis</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">All map figures approved by AER without revision requests — submitted 3 days ahead of application deadline.</span></div>
-      </div>
-
-      <!-- Reclamation Drone -->
-      <div class="proj-card" data-cat="drone environmental">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=600&q=70')">
-          <span class="proj-cat">DRONE + ENVIRONMENTAL</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">OIL & GAS OPERATOR</span>
-          <h3 class="proj-title">Reclamation Progress Monitoring — Drone Survey Program</h3>
-          <p class="proj-desc">Established a seasonal drone survey program for reclamation monitoring at a pipeline right-of-way. Delivered georeferenced orthomosaics, disturbance footprint change detection, and vegetation recovery mapping each field season. All imagery integrated directly into ArcGIS Online for client access.</p>
-          <div class="proj-tags"><span class="proj-tag">DJI Mavic 3E</span><span class="proj-tag">Pix4D</span><span class="proj-tag">Change Detection</span><span class="proj-tag">ArcGIS Online</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Replaced helicopter-based surveys — same coverage at significantly lower cost with higher spatial resolution and faster turnaround.</span></div>
-      </div>
-
-      <!-- Municipal Asset -->
-      <div class="proj-card" data-cat="municipal">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&q=70')">
-          <span class="proj-cat">MUNICIPAL</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ALBERTA TOWN (POPULATION ~8,000)</span>
-          <h3 class="proj-title">Municipal Infrastructure Asset Inventory</h3>
-          <p class="proj-desc">Delivered a complete GIS asset inventory for roads, sidewalks, storm drainage, streetlights, and parks infrastructure for a small Alberta municipality with no previous GIS program. Included field data collection using Survey123, geodatabase design, web map publishing, and staff training for ongoing maintenance.</p>
-          <div class="proj-tags"><span class="proj-tag">Asset Inventory</span><span class="proj-tag">Survey123</span><span class="proj-tag">ArcGIS Online</span><span class="proj-tag">Training</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Municipality now maintains its own GIS program with live web maps accessible to council and operations staff.</span></div>
-      </div>
-
-      <!-- Automation -->
-      <div class="proj-card" data-cat="automation">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&q=70')">
-          <span class="proj-cat">AUTOMATION</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ENGINEERING CONSULTING FIRM</span>
-          <h3 class="proj-title">FME ETL Pipeline — CAD to GIS Conversion</h3>
-          <p class="proj-desc">Developed an FME workspace pipeline to automate conversion of AutoCAD DWG files to enterprise geodatabase features, with attribute mapping, coordinate system transformation, geometry validation, and automated error reporting. Reduced a 3-day manual process to under 2 hours per project.</p>
-          <div class="proj-tags"><span class="proj-tag">FME</span><span class="proj-tag">CAD to GIS</span><span class="proj-tag">ETL</span><span class="proj-tag">arcpy</span><span class="proj-tag">Automation</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">3-day manual conversion process reduced to under 2 hours — deployed as a recurring pipeline for ongoing project delivery.</span></div>
-      </div>
-
-      <!-- Drone Corridor -->
-      <div class="proj-card" data-cat="drone utilities">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600&q=70')">
-          <span class="proj-cat">DRONE + UTILITIES</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ELECTRIC DISTRIBUTION UTILITY</span>
-          <h3 class="proj-title">Powerline Corridor Vegetation Encroachment Survey</h3>
-          <p class="proj-desc">Conducted a drone-based vegetation encroachment survey along 45km of distribution line corridor. Delivered RGB orthomosaics, vegetation proximity classification, and georeferenced encroachment records imported directly into the utility's ArcGIS Utility Network asset register for maintenance prioritization.</p>
-          <div class="proj-tags"><span class="proj-tag">TC Advanced RPAS</span><span class="proj-tag">Vegetation Analysis</span><span class="proj-tag">Utility Network</span><span class="proj-tag">Pix4D</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Encroachment records integrated directly into Utility Network — maintenance crews dispatched from GIS without manual transcription.</span></div>
-      </div>
-
-      <!-- Python Automation -->
-      <div class="proj-card" data-cat="automation enterprise">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=70')">
-          <span class="proj-cat">AUTOMATION</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">REGIONAL UTILITY OPERATOR</span>
-          <h3 class="proj-title">Automated Geodatabase Maintenance & Reporting Suite</h3>
-          <p class="proj-desc">Developed a Python (arcpy) script library for scheduled geodatabase maintenance — compress, rebuild indexes, analyze datasets, version cleanup, and health reporting. Deployed as Windows Task Scheduler jobs with automated email reporting to GIS and IT administrators.</p>
-          <div class="proj-tags"><span class="proj-tag">Python / arcpy</span><span class="proj-tag">Geodatabase Admin</span><span class="proj-tag">Automation</span><span class="proj-tag">SQL Server</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Eliminated weekly manual maintenance window — all tasks run overnight with health reports delivered to admin inbox by 6am.</span></div>
-      </div>
-
-      <!-- ESA Mapping -->
-      <div class="proj-card" data-cat="environmental">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=70')">
-          <span class="proj-cat">ENVIRONMENTAL</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ENVIRONMENTAL CONSULTING FIRM (SUBCONSULTANT)</span>
-          <h3 class="proj-title">Phase I/II ESA Supporting GIS Package</h3>
-          <p class="proj-desc">Delivered a full Phase I and Phase II ESA GIS package including historical land use mapping (aerial photo time series), contamination receptor proximity analysis, sensitive feature delineation, and regulatory figure production. Included NSSDA positional accuracy statement for all spatial datasets.</p>
-          <div class="proj-tags"><span class="proj-tag">ESA Mapping</span><span class="proj-tag">Historical Imagery</span><span class="proj-tag">NSSDA</span><span class="proj-tag">Regulatory Figures</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">GIS package incorporated directly into ESA report without modification — accepted by regulatory reviewer without spatial data comments.</span></div>
-      </div>
-
-      <!-- Web GIS Portal -->
-      <div class="proj-card" data-cat="municipal">
-        <div class="proj-img" style="background-image:url('https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=600&q=70')">
-          <span class="proj-cat">MUNICIPAL</span>
-        </div>
-        <div class="proj-body">
-          <span class="proj-client">ALBERTA COUNTY</span>
-          <h3 class="proj-title">Public Web GIS Portal & Open Data Platform</h3>
-          <p class="proj-desc">Configured an ArcGIS Hub open data portal and public web application providing residents, developers, and internal staff access to zoning, land use, infrastructure, and emergency services data. Included Experience Builder web app with property inquiry tools and zoning certificate lookup.</p>
-          <div class="proj-tags"><span class="proj-tag">ArcGIS Hub</span><span class="proj-tag">Experience Builder</span><span class="proj-tag">Open Data</span><span class="proj-tag">Web GIS</span></div>
-        </div>
-        <div class="proj-outcome"><span class="proj-outcome-icon">◈</span><span class="proj-outcome-text">Zoning inquiry calls to planning department dropped by ~40% in first quarter after portal launch.</span></div>
-      </div>
-
+        </li>
+        <li>
+          <span class="val-num">02</span>
+          <div class="val-content">
+            <h4>Outcome-Focused</h4>
+            <p>We measure success by operational outcomes — reduced costs, faster decisions, better data — not deliverable count.</p>
+          </div>
+        </li>
+        <li>
+          <span class="val-num">03</span>
+          <div class="val-content">
+            <h4>Technology Agnostic</h4>
+            <p>We recommend the right tool for the problem. Esri, open-source, or hybrid — the client's need drives the choice.</p>
+          </div>
+        </li>
+        <li>
+          <span class="val-num">04</span>
+          <div class="val-content">
+            <h4>Built on Trust</h4>
+            <p>Most of our work comes from referrals. We earn repeat engagements by being straightforward about scope, timeline, and cost.</p>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
+</div>
 
-  <!-- TESTIMONIALS -->
-  <div style="background:var(--nv2);padding:4rem 0">
-    <div class="section" style="padding-top:0;padding-bottom:0">
-      <span class="sec-ey">CLIENT FEEDBACK</span>
-      <h2 class="sec-title">What clients <span class="gold">say</span></h2>
-      <div class="testi-grid">
-        <div class="testi-card">
-          <p class="testi-quote">"We needed a Utility Network specialist who could hit the ground running — Midspan was the only independent consultant we found who actually held the certification and could demonstrate the knowledge to back it up."</p>
-          <div class="testi-attr">GIS Manager</div>
-          <div class="testi-role">Alberta Electric Distribution Utility</div>
-        </div>
-        <div class="testi-card">
-          <p class="testi-quote">"The combination of drone survey and GIS processing from one provider was exactly what we needed. No coordination between vendors, no data handoff issues — just clean deliverables integrated straight into our system."</p>
-          <div class="testi-attr">Project Manager</div>
-          <div class="testi-role">Oil & Gas Operator, Alberta</div>
-        </div>
-        <div class="testi-card">
-          <p class="testi-quote">"As a small town without any GIS capacity, we needed someone who could build something we could actually maintain ourselves. Midspan delivered a system our team uses every day — and trained us to keep it current."</p>
-          <div class="testi-attr">Director of Operations</div>
-          <div class="testi-role">Alberta Municipality</div>
-        </div>
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">MIDSPAN<span style="color:var(--gold)">·</span>GEOSPATIAL</div>
+        <p>Calgary-based GIS consultancy serving Western Canada's utility, environmental, and municipal sectors.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Services</h5>
+        <ul>
+          <li onclick="showPage('utilities')">Utility Network GIS</li>
+          <li onclick="showPage('environmental')">Environmental GIS</li>
+          <li onclick="showPage('municipal')">Municipal GIS</li>
+          <li onclick="showPage('drone')">Drone Mapping</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li onclick="showPage('about')">About Us</li>
+          <li onclick="showPage('projects')">Projects</li>
+          <li onclick="openModal()">Contact</li>
+          <li><a href="https://www.linkedin.com/in/ibe-ezuma-gisp%C2%AE-39774a3a" target="_blank" style="color:inherit;text-decoration:none">LinkedIn</a></li>
+        </ul>
       </div>
     </div>
-  </div>
-
-  <!-- ENGAGEMENT CTA -->
-  <div class="cta-strip" style="background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1400&q=70')">
-    <div class="cta-cnt">
-      <h2>Have a project in mind?</h2>
-      <p>Midspan takes on project-based, retainer, and subconsultant engagements across Western Canada. Reach out to discuss your scope and timeline.</p>
-      <button class="btn-p" onclick="showPage('home',true)">Start a Conversation</button>
+    <div class="footer-bottom">
+      <p>© 2024 Midspan Geospatial Ltd. All rights reserved. Calgary, Alberta, Canada.</p>
+      <p class="mono">51.0447° N · 114.0719° W</p>
     </div>
   </div>
+</footer>
 
-  <footer>
-    <div class="ft-inner">
-      <div class="ft-left"><div class="nav-logo" style="display:inline-block;cursor:pointer" onclick="showPage('home')">MIDSPAN<br><em>GEOSPATIAL</em></div><p class="ft-tagline">Your GIS Partner in Western Canada</p></div>
-      <div class="ft-links">
-        <div class="ft-col"><h5>Services</h5><a onclick="showPage('utilities')">Utility Network GIS</a><a onclick="showPage('environmental')">Environmental GIS</a><a onclick="showPage('municipal')">Municipal & Government</a><a onclick="showPage('drone')">Drone Mapping</a></div>
-        <div class="ft-col"><h5>Company</h5><a onclick="showPage('projects')">Projects</a><a onclick="showPage('about')">About</a><a onclick="showPage('home',true)">Contact</a></div>
-        <div class="ft-col"><h5>Certifications</h5><span>GISP — GISCI</span><span>ArcGIS Pro Professional</span><span>ArcGIS Enterprise Admin</span><span>Utility Network Associate</span><span>TC Advanced RPAS</span></div>
-      </div>
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>Start a Conversation</h2>
+    <p class="modal-sub">Tell us about your project. We'll respond within one business day.</p>
+    <div class="form-group">
+      <label>Your Name</label>
+      <input id="f-name" type="text" placeholder="Jane Smith">
     </div>
-    <div class="ft-bot"><span>© 2026 MIDSPAN GEOSPATIAL LTD · CALGARY, ALBERTA · ALL RIGHTS RESERVED</span><span>GST/HST REGISTERED</span></div>
-  </footer>
+    <div class="form-group">
+      <label>Organization</label>
+      <input id="f-org" type="text" placeholder="ATCO Gas / City of Calgary / …">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input id="f-email" type="email" placeholder="jane@yourorg.com">
+    </div>
+    <div class="form-group">
+      <label>Service Interest</label>
+      <select id="f-service">
+        <option value="">Select a service…</option>
+        <option>Utility Network GIS</option>
+        <option>Environmental GIS</option>
+        <option>Municipal GIS</option>
+        <option>Drone Mapping & Survey</option>
+        <option>Other / General Inquiry</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Brief Description</label>
+      <textarea id="f-desc" placeholder="Tell us about your project, timeline, and key challenges…"></textarea>
+    </div>
+    <button class="form-submit" onclick="submitForm()">Send Message</button>
+    <p class="form-note">Or connect directly via <a href="https://www.linkedin.com/in/ibe-ezuma-gisp%C2%AE-39774a3a" target="_blank" style="color:var(--gold)">LinkedIn</a></p>
+  </div>
 </div>
 
 <script>
-function submitContactForm() {
-  var name = document.getElementById('cf-name').value;
-  var email = document.getElementById('cf-email').value;
-  var company = document.getElementById('cf-company').value;
-  var service = document.getElementById('cf-service').value;
-  var msg = document.getElementById('cf-msg').value;
-  if(!name || !email || !msg){ alert('Please fill in your name, email, and message.'); return; }
-  var subject = encodeURIComponent('Midspan Geospatial Enquiry — ' + (service || 'General'));
-  var body = encodeURIComponent('Name: ' + name + '\nCompany: ' + company + '\nEmail: ' + email + '\nService: ' + service + '\n\nMessage:\n' + msg);
-  window.location.href = 'mailto:[email address]?subject=' + subject + '&body=' + body;
-  document.getElementById('cf-success').style.display = 'block';
-}
-function showPage(id, scrollContact) {
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
-  document.querySelectorAll('.nav-tab').forEach(function(b){b.classList.remove('active')});
-  var pg = document.getElementById('pg-' + id);
-  if(pg){ pg.classList.add('active'); window.scrollTo(0,0); }
-  var map = {home:0,utilities:1,environmental:2,municipal:3,drone:4,projects:5,about:6};
-  var tabs = document.querySelectorAll('.nav-tab');
-  if(tabs[map[id]]) tabs[map[id]].classList.add('active');
-  if(scrollContact){
-    setTimeout(function(){
-      var el = document.getElementById('contact');
-      if(el) el.scrollIntoView({behavior:'smooth'});
-    }, 80);
-  }
+// ── NAV ──
+const pages = ['home','utilities','environmental','municipal','drone','projects','about'];
+
+function showPage(id) {
+  pages.forEach(p => {
+    document.getElementById(p).classList.toggle('active', p === id);
+    const btn = document.getElementById('nav-'+p);
+    if(btn) btn.classList.toggle('active', p === id);
+  });
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-function filterProjects(cat) {
-  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active')});
-  event.target.classList.add('active');
-  document.querySelectorAll('.proj-card').forEach(function(card){
-    if(cat === 'all'){
-      card.classList.remove('hidden');
-    } else {
-      var cats = (card.getAttribute('data-cat') || '');
-      if(cats.indexOf(cat) !== -1){
-        card.classList.remove('hidden');
-      } else {
-        card.classList.add('hidden');
-      }
-    }
-  });
+// ── MODAL ──
+function openModal() {
+  document.getElementById('contactModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
+function closeModal() {
+  document.getElementById('contactModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalOutside(e) {
+  if(e.target === document.getElementById('contactModal')) closeModal();
+}
+function submitForm() {
+  const name = document.getElementById('f-name').value.trim();
+  const org = document.getElementById('f-org').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const service = document.getElementById('f-service').value;
+  const desc = document.getElementById('f-desc').value.trim();
+
+  if(!name || !email) { alert('Please provide your name and email.'); return; }
+
+  const subject = encodeURIComponent('Midspan Geospatial Inquiry' + (service ? ' — ' + service : ''));
+  const body = encodeURIComponent(
+    'Name: ' + name + '\n' +
+    'Organization: ' + (org || '—') + '\n' +
+    'Email: ' + email + '\n' +
+    'Service: ' + (service || '—') + '\n\n' +
+    'Message:\n' + (desc || '—')
+  );
+
+  window.location.href = 'mailto:ibeezuma@gmail.com?subject=' + subject + '&body=' + body;
+  closeModal();
+}
+
+// ── PROJECTS ──
+const projects = [
+  { cat:'utility', label:'Utility Network', title:'Gas Distribution UN Migration', desc:'Migrated 2,400 km of legacy geometric network data to ArcGIS Utility Network for Western Canada gas distributor.', tags:['ArcGIS UN','Python','SQL Server'], outcome:'↑ 40% field data accuracy' },
+  { cat:'utility', label:'Utility Network', title:'Electric Utility Trace Analytics', desc:'Redesigned network topology and implemented trace analytics for outage prediction and CER compliance.', tags:['Utility Network','Trace API','ArcGIS Pro'], outcome:'↓ 25% outage response time' },
+  { cat:'enterprise', label:'Enterprise GIS', title:'ArcGIS Enterprise Deployment', desc:'Full enterprise GIS for a mid-size Alberta municipality — data migration, portal, and training.', tags:['ArcGIS Enterprise','Portal','FME'], outcome:'18 depts onboarded on schedule' },
+  { cat:'environmental', label:'Environmental', title:'Pipeline Corridor Baseline', desc:'Multi-layer environmental GIS baseline for 180 km corridor AER regulatory submission, Northern Alberta.', tags:['ArcGIS Pro','Spatial Analyst','Remote Sensing'], outcome:'Approved on first review' },
+  { cat:'environmental', label:'Environmental', title:'Wetland Delineation & Monitoring', desc:'Drone-assisted wetland mapping integrated with Field Maps for annual reclamation compliance.', tags:['Drone2Map','Field Maps','Python'], outcome:'1,200 ha · 35% faster' },
+  { cat:'drone', label:'Drone Mapping', title:'Pipeline ROW Corridor Survey', desc:'160 km pipeline right-of-way photogrammetric survey for encroachment detection and vegetation management.', tags:['Pix4D','DJI Enterprise','ArcGIS Reality'], outcome:'3 cm ortho · 4-day campaign' },
+  { cat:'drone', label:'Drone Mapping', title:'Mine Site Volumetric Survey', desc:'Quarterly drone surveys for stockpile volumetric change detection and reclamation progress.', tags:['Drone Photogrammetry','CloudCompare','GCP'], outcome:'±0.5% volume accuracy' },
+  { cat:'municipal', label:'Municipal', title:'Land Information System Rebuild', desc:'Parcel fabric redesign and assessment data integration for county with 45,000 parcels.', tags:['Parcel Fabric','SQL Server','ETL'], outcome:'Data integrity 71%→99%' },
+  { cat:'municipal', label:'Municipal', title:'Citizen Map Portal', desc:'Public-facing ArcGIS Experience Builder application for permits, zoning, and property look-up.', tags:['Experience Builder','ArcGIS Online','REST API'], outcome:'3,000+ monthly users' },
+  { cat:'automation', label:'Automation', title:'GIS Data Quality Pipeline', desc:'Automated Python pipeline for nightly data validation, error flagging, and reporting across enterprise geodatabase.', tags:['Python','ArcPy','SQL Server'], outcome:'90% reduction in manual QA time' },
+  { cat:'utility', label:'Utility Network', title:'Water Network Condition Assessment', desc:'Condition rating data model and Field Maps workflow for an 800 km municipal water pipe network.', tags:['Field Maps','ArcGIS Pro','Dashboards'], outcome:'Asset registry 98% complete' },
+  { cat:'enterprise', label:'Enterprise GIS', title:'GIS-SCADA Integration', desc:'Real-time GIS-SCADA data bridge for gas distribution situational awareness and emergency response mapping.', tags:['REST API','Python','ArcGIS Dashboards'], outcome:'15-sec data refresh · live ops' },
+];
+
+function renderProjects(filter='all') {
+  const grid = document.getElementById('projectsGrid');
+  const filtered = filter === 'all' ? projects : projects.filter(p => p.cat === filter);
+  grid.innerHTML = filtered.map(p => `
+    <div class="proj-card">
+      <div class="proj-cat">${p.label}</div>
+      <h3>${p.title}</h3>
+      <p>${p.desc}</p>
+      <div class="proj-tags">${p.tags.map(t=>`<span class="proj-tag">${t}</span>`).join('')}</div>
+      <div class="proj-outcome">→ ${p.outcome}</div>
+    </div>
+  `).join('');
+}
+
+function filterProjects(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProjects(cat);
+}
+
+renderProjects();
 </script>
 </body>
 </html>
