@@ -196,12 +196,12 @@ nav {
   max-width: 560px; margin-bottom: 56px;
 }
 .services-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 1px; background: var(--border);
   border: 1px solid var(--border);
 }
 @media(max-width:900px){ .services-grid { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width:560px){ .services-grid { grid-template-columns: 1fr; } }
+@media(max-width:500px){ .services-grid { grid-template-columns: 1fr; } }
 .service-card {
   background: var(--navy-mid); padding: 40px 36px;
   cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
@@ -1125,7 +1125,7 @@ function submitForm() {
     'Message:\n' + (desc || '—')
   );
 
-  window.location.href = 'mailto:ibeezuma@gmail.com?subject=' + subject + '&body=' + body;
+  window.location.href = 'mailto:ibe.ezuma@midspangeospatial.com?subject=' + subject + '&body=' + body;
   closeModal();
 }
 
