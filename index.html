@@ -63,6 +63,7 @@ nav {
   border-radius: 3px; cursor: pointer; transition: all 0.2s;
 }
 .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
+@media(max-width:1400px){ nav { padding: 0 20px; } .logo { font-size: 20px; letter-spacing: 2px; } .nav-links { gap: 0; } .nav-links button { padding: 8px 9px; letter-spacing: 1px; } .nav-cta { padding: 10px 14px; white-space: nowrap; } }
 
 /* ── PAGE CONTAINER ── */
 .page { display: none; }
@@ -567,6 +568,7 @@ footer {
     <button onclick="showPage('municipal')" id="nav-municipal">Municipal</button>
     <button onclick="showPage('drone')" id="nav-drone">Drone</button>
     <button onclick="showPage('projects')" id="nav-projects">Projects</button>
+    <button onclick="showPage('portfolio')" id="nav-portfolio">Portfolio</button>
     <button onclick="showPage('about')" id="nav-about">About</button>
   </div>
   <button class="nav-cta" onclick="openModal()">Start a Conversation</button>
@@ -933,6 +935,45 @@ footer {
   </div>
 </div>
 
+<div id="portfolio" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// Portfolio</p>
+    <h1>Interactive<br>Demos</h1>
+    <p>Working dashboards built on open source tools. All data in these demos is synthetic and created for illustration; none of it comes from a client.</p>
+  </div>
+
+  <div class="projects-grid" style="margin-top:24px;margin-bottom:80px">
+    <div class="proj-card">
+      <div class="proj-cat">Municipal · Interactive demo</div>
+      <h3>Resident Issue Tracker</h3>
+      <p>Open source dashboard for a small town: where residents report problems, how fast they are fixed against service targets, and where issues keep repeating.</p>
+      <div class="proj-tags"><span class="proj-tag">Leaflet</span><span class="proj-tag">Chart.js</span><span class="proj-tag">QGIS</span><span class="proj-tag">GeoJSON</span></div>
+      <div class="proj-outcome"><a href="demos/issue-tracker.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Municipal · Interactive demo</div>
+      <h3>Resident Report Form</h3>
+      <p>Map-based report form with pin placement, GPS and place search, a service-area check and moderated submissions. Runs in demo mode, so nothing is sent.</p>
+      <div class="proj-tags"><span class="proj-tag">Leaflet</span><span class="proj-tag">OpenStreetMap</span><span class="proj-tag">Supabase</span></div>
+      <div class="proj-outcome"><a href="demos/report-form.html" target="_blank" rel="noopener" style="color:inherit">Try the form →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Drone Mapping · Interactive demo</div>
+      <h3>Earthworks Progress Monitor</h3>
+      <p>Survey-to-survey cut and fill, stockpile volumes and progress against design for a small construction site.</p>
+      <div class="proj-tags"><span class="proj-tag">Surface differencing</span><span class="proj-tag">Volumes</span><span class="proj-tag">Chart.js</span></div>
+      <div class="proj-outcome"><a href="demos/earthworks-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Environmental · Interactive demo</div>
+      <h3>Site Condition Monitor</h3>
+      <p>Wetland, stream and vegetation condition across monitored sites, with NDVI trends and field observations.</p>
+      <div class="proj-tags"><span class="proj-tag">Leaflet</span><span class="proj-tag">NDVI</span><span class="proj-tag">Chart.js</span></div>
+      <div class="proj-outcome"><a href="demos/site-condition-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════ ABOUT ════════════════════ -->
 <div id="about" class="page">
   <div class="page-hero">
@@ -1084,7 +1125,7 @@ footer {
 
 <script>
 // ── NAV ──
-const pages = ['home','utilities','environmental','municipal','drone','projects','about'];
+const pages = ['home','utilities','environmental','municipal','drone','projects','portfolio','about'];
 
 function showPage(id) {
   pages.forEach(p => {

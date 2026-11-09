@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Midspan Site Condition Monitor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+html,body{margin:0}
+/* Layout: filter bar, five KPI tiles, schematic site map beside three charts, site table below.
+   Palette: neutral warm greys plus the blue-first categorical order; sites are the only blue pins. */
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4;
+  --r1:#86b6ef; --r2:#5598e7; --r3:#2a78d6; --r4:#1c5cab;
+  --tipbg:#0b0b0b; --tipfg:#fcfcfb; --tilefilter:none;
+  --sys:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181;
+    --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+    --tilefilter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.85) saturate(.55);
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181;
+  --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+    --tilefilter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.85) saturate(.55);
+}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sys);font-size:14px;line-height:1.45;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(24px,4.4vw,32px);line-height:1.15;font-weight:650;text-wrap:balance}
+.sub{color:var(--ink2);margin-top:4px}
+.demo{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--axis);color:var(--ink2);border-radius:999px;padding:4px 10px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.controls label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2);min-width:0}
+select,button{font:inherit;color:var(--ink)}
+select{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:8px 10px;min-width:220px;max-width:100%}
+.btn{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--ink2)}
+select:focus-visible,.btn:focus-visible,.row:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.main{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.charts{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px;min-width:0}
+.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+h2{font-size:15px;font-weight:650}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+.map{position:relative;height:clamp(340px,56vw,500px);border:1px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--surface)}
+.map svg{display:block;width:100%;height:100%}
+.grat{stroke:var(--grid);stroke-width:1}
+.gl{font:11px var(--sys);fill:var(--muted);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.tiles{filter:var(--tilefilter);opacity:.92}
+.attr{position:absolute;right:0;bottom:0;z-index:2;background:var(--surface);color:var(--ink2);font-size:11px;padding:2px 6px;border-top-left-radius:6px;opacity:.92}
+.attr a{color:inherit}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.mini{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}
+.mini select{min-width:0;padding:6px 8px}
+.bnd{fill:none;stroke:var(--ink2);stroke-width:1}
+.pin{cursor:pointer;outline:none}
+.pin circle{stroke:var(--surface);stroke-width:2.5}
+.pin.on circle{fill:var(--c1)} .pin.off circle{fill:var(--axis)}
+.pin:focus-visible circle,.pin:hover circle{stroke:var(--ink)}
+.pin text{font:600 12px var(--sys);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.pin.off text{fill:var(--muted)}
+.sitepoly{fill:var(--c1);fill-opacity:.07;stroke:var(--ink);stroke-width:1.5;stroke-dasharray:6 4}
+.wet{stroke:var(--surface);stroke-width:1.5;fill-opacity:.85}
+.wet:hover{fill-opacity:1;stroke:var(--ink)}
+.strm{fill:none;stroke:var(--ink2);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hit{fill:none;stroke:transparent;stroke-width:16;stroke-linecap:round}
+.ob{fill:var(--surface);stroke:var(--ink);stroke-width:1.75}
+.ob:hover{stroke:var(--c1);stroke-width:3}
+.sb{stroke:var(--ink);stroke-width:2;fill:none}
+.sbt{font:11px var(--sys);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:12px;padding:6px 9px;border-radius:6px;max-width:260px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.swc{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
+.swl{width:18px;height:0;border-top:2.5px solid var(--ink2);display:inline-block;flex:none}
+.swd{width:18px;height:0;border-top:1.5px dashed var(--ink);display:inline-block;flex:none}
+.chartbox{position:relative;height:210px}
+.chartbox.donut{height:190px}
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:4px 14px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.dl div{display:flex;align-items:center;gap:6px;min-width:0}
+.dl b{margin-left:auto;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.dnut{display:grid;grid-template-columns:minmax(0,1fr);}
+.table{display:flex;flex-direction:column;gap:6px}
+.thead,.row{display:grid;grid-template-columns:64px minmax(0,2.4fr) repeat(4,minmax(0,1fr)) minmax(0,1.1fr);gap:10px;align-items:center}
+.thead{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);padding:0 12px}
+.row{width:100%;text-align:left;background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:10px 12px;cursor:pointer}
+.row:hover{border-color:var(--axis)}
+.row.sel{border-color:var(--c1);box-shadow:inset 0 0 0 1px var(--c1)}
+.row.off{opacity:.5}
+.row .id{font-weight:650;font-variant-numeric:tabular-nums}
+.row .nm{min-width:0}
+.row .nm b{display:block;font-weight:600;overflow-wrap:anywhere}
+.row .nm span{font-size:12px;color:var(--ink2)}
+.row .num{font-variant-numeric:tabular-nums}
+.row .nd{display:flex;align-items:center;gap:6px}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){
+  .thead{display:none}
+  .row{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}
+  .row .id{grid-column:1}
+  .row .nm{grid-column:1 / -1;order:-1}
+  .row .num::before,.row .nd::before{content:attr(data-l);display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .row .nd{flex-wrap:wrap}
+  .row .nd .num::before{content:none}
+  select{min-width:0;width:100%}
+  .controls label{flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Midspan Geospatial Ltd · Alberta</p>
+      <h1>Site Condition Monitor</h1>
+      <p class="sub">Wetlands, streams and vegetation health across six project sites, April to October 2026.</p>
+    </div>
+    <span class="demo">Synthetic demo data</span>
+  </header>
+
+  <section class="controls" aria-label="Filters">
+    <label>Site<select id="selSite" aria-label="Filter by site"></select></label>
+    <label>Service type<select id="selType" aria-label="Filter by service type"></select></label>
+    <button class="btn" id="btnReset" type="button">Reset filters</button>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Summary indicators"></section>
+
+  <section class="main">
+    <article class="card">
+      <div class="cardhead">
+        <div><h2 id="mapTitle">Project sites</h2><p class="note" id="mapSub"></p></div>
+        <div class="tools">
+          <label class="mini">Basemap<select id="selBase" aria-label="Basemap"><option value="osm">OpenStreetMap</option><option value="none">None</option></select></label>
+          <button class="btn" id="btnBack" type="button" hidden>All sites</button>
+        </div>
+      </div>
+      <div class="map" id="map">
+        <svg id="svg" role="img" aria-label="Schematic map of Midspan project sites"></svg>
+        <div class="tip" id="tip" hidden></div>
+        <div class="attr" id="attr" hidden><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></div>
+      </div>
+      <div class="legend" id="mapLegend"></div>
+    </article>
+
+    <div class="charts">
+      <article class="card">
+        <h2>NDVI through the 2026 growing season</h2>
+        <p class="note" id="ndviNote"></p>
+        <div class="chartbox" style="margin-top:10px"><canvas id="cNdvi" aria-label="Line chart of monthly NDVI" role="img"></canvas></div>
+        <div class="legend" id="ndviLegend"></div>
+      </article>
+      <article class="card">
+        <h2>Wetland area by class</h2>
+        <p class="note" id="clsNote"></p>
+        <div class="chartbox donut" style="margin-top:10px"><canvas id="cCls" aria-label="Doughnut chart of wetland area by class" role="img"></canvas></div>
+        <div class="dl" id="clsList"></div>
+      </article>
+      <article class="card">
+        <h2>Area surveyed by service type</h2>
+        <p class="note">Hectares</p>
+        <div class="chartbox" style="margin-top:10px"><canvas id="cType" aria-label="Bar chart of surveyed hectares by service type" role="img"></canvas></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="cardhead"><div><h2>Sites</h2><p class="note">Select a row to focus the map and charts on that site.</p></div></div>
+    <div class="table">
+      <div class="thead"><span>ID</span><span>Site</span><span>Area (ha)</span><span>Wetland (ha)</span><span>Wetland share</span><span>Stream (km)</span><span>Mean NDVI</span></div>
+      <div id="rows" class="table"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>All sites, wetlands, streams, observations and NDVI values are synthetic and were generated for demonstration. They do not describe real land.</p>
+    <p>Sites, wetlands, streams and observations are drawn from the dataset's own WGS84 coordinates, north up. The optional basemap is OpenStreetMap, shown only where the host page allows image loads. NDVI is a unitless index from -1 to 1.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = {"sites":[{"id":"MS-01","name":"Elbow River Riparian Assessment","type":"Riparian Assessment","date":"2026-05-14","area":340.49,"wet":28.08,"wetPct":8.2,"stream":4.2,"ndvi":0.611,"ring":[[-114.18352,50.98],[-114.18798,50.98316],[-114.1898,50.98647],[-114.19459,50.98828],[-114.2,50.9908],[-114.20639,50.98978],[-114.21266,50.98803],[-114.21234,50.98324],[-114.21525,50.98],[-114.21205,50.97684],[-114.20997,50.97368],[-114.20602,50.97079],[-114.2,50.97174],[-114.19464,50.9718],[-114.1883,50.97258],[-114.18527,50.97613],[-114.18352,50.98]]},{"id":"MS-02","name":"Springbank Wetland Delineation","type":"Wetland Delineation","date":"2026-06-03","area":224.53,"wet":28.73,"wetPct":12.8,"stream":3.31,"ndvi":0.502,"ring":[[-114.31614,51.1],[-114.31854,51.103],[-114.32033,51.10611],[-114.3253,51.10718],[-114.33,51.10931],[-114.33484,51.10739],[-114.33828,51.10523],[-114.34003,51.10263],[-114.34065,51.1],[-114.34213,51.09682],[-114.33939,51.09406],[-114.33405,51.09381],[-114.33,51.09125],[-114.32586,51.09367],[-114.32231,51.09514],[-114.32011,51.09741],[-114.31614,51.1]]},{"id":"MS-03","name":"Rocky View Slough Baseline","type":"Environmental Baseline","date":"2026-06-25","area":596.13,"wet":39.31,"wetPct":6.6,"stream":5.77,"ndvi":0.573,"ring":[[-114.27684,51.22],[-114.28321,51.22439],[-114.28753,51.22787],[-114.29149,51.23296],[-114.3,51.23119],[-114.30744,51.23133],[-114.31256,51.22792],[-114.32139,51.22559],[-114.32212,51.22],[-114.31796,51.21531],[-114.31507,51.2105],[-114.30833,51.20731],[-114.3,51.20848],[-114.29326,51.20973],[-114.28477,51.2104],[-114.28223,51.21536],[-114.27684,51.22]]},{"id":"MS-04","name":"Bow River Corridor Survey","type":"Floodplain Mapping","date":"2026-07-16","area":615.18,"wet":51.36,"wetPct":8.3,"stream":5.74,"ndvi":0.593,"ring":[[-113.8287,51.02],[-113.83207,51.02471],[-113.83518,51.02939],[-113.84117,51.0335],[-113.85,51.03227],[-113.85771,51.0318],[-113.86729,51.03095],[-113.8668,51.02441],[-113.86873,51.02],[-113.86896,51.01503],[-113.86325,51.0116],[-113.85735,51.00875],[-113.85,51.00685],[-113.8423,51.00823],[-113.83504,51.01052],[-113.83333,51.01563],[-113.8287,51.02]]},{"id":"MS-05","name":"Red Deer River Floodplain","type":"Floodplain Mapping","date":"2026-08-06","area":512.35,"wet":23.69,"wetPct":4.6,"stream":4.93,"ndvi":0.615,"ring":[[-113.8778,52.1],[-113.884,52.1041],[-113.88481,52.1094],[-113.89374,52.10936],[-113.9,52.10992],[-113.90725,52.11083],[-113.91382,52.10855],[-113.91874,52.1048],[-113.91663,52.1],[-113.91953,52.095],[-113.91562,52.09034],[-113.90619,52.09076],[-113.9,52.08931],[-113.89257,52.08891],[-113.88696,52.09194],[-113.88183,52.09534],[-113.8778,52.1]]},{"id":"MS-06","name":"Kananaskis Fen Monitoring","type":"Habitat Monitoring","date":"2026-08-27","area":209.3,"wet":44.94,"wetPct":21.5,"stream":3.2,"ndvi":0.628,"ring":[[-115.03826,50.95],[-115.03885,50.95293],[-115.04087,50.95579],[-115.04572,50.95656],[-115.05,50.9572],[-115.0541,50.95628],[-115.05883,50.9556],[-115.06007,50.95265],[-115.06318,50.95],[-115.06194,50.94686],[-115.05946,50.944],[-115.05395,50.94394],[-115.05,50.94307],[-115.04508,50.94246],[-115.04219,50.94505],[-115.04015,50.94741],[-115.03826,50.95]]}],"wetlands":[{"id":"MS-01-W01","site":"MS-01","cls":"Bog","ha":9.743,"ring":[[-114.19996,50.98075],[-114.20168,50.98143],[-114.20216,50.98228],[-114.20356,50.9823],[-114.20472,50.98201],[-114.20669,50.98189],[-114.2056,50.98075],[-114.2059,50.97989],[-114.20489,50.97929],[-114.20356,50.97909],[-114.20235,50.97942],[-114.20192,50.98015],[-114.19996,50.98075]]},{"id":"MS-01-W02","site":"MS-01","cls":"Fen","ha":4.655,"ring":[[-114.20703,50.97868],[-114.20693,50.97943],[-114.20795,50.9798],[-114.20897,50.98021],[-114.20996,50.97977],[-114.21085,50.97937],[-114.21015,50.97868],[-114.21023,50.97822],[-114.20974,50.97783],[-114.20897,50.9779],[-114.20824,50.97788],[-114.20787,50.97828],[-114.20703,50.97868]]},{"id":"MS-01-W03","site":"MS-01","cls":"Swamp","ha":2.838,"ring":[[-114.20656,50.98148],[-114.20642,50.98198],[-114.20697,50.98236],[-114.20777,50.98248],[-114.20822,50.98198],[-114.20908,50.98197],[-114.20918,50.98148],[-114.20871,50.98114],[-114.20843,50.98076],[-114.20777,50.98078],[-114.20685,50.98048],[-114.2064,50.98099],[-114.20656,50.98148]]},{"id":"MS-01-W04","site":"MS-01","cls":"Fen","ha":10.846,"ring":[[-114.2011,50.97524],[-114.20177,50.97579],[-114.20209,50.97654],[-114.20327,50.97667],[-114.20433,50.97641],[-114.20652,50.97643],[-114.20687,50.97524],[-114.20531,50.97449],[-114.20483,50.97353],[-114.20327,50.97363],[-114.20142,50.97322],[-114.20095,50.97439],[-114.2011,50.97524]]},{"id":"MS-02-W01","site":"MS-02","cls":"Marsh","ha":8.874,"ring":[[-114.3255,51.10077],[-114.32591,51.10133],[-114.32575,51.10264],[-114.32746,51.10246],[-114.32869,51.10212],[-114.33015,51.10175],[-114.33061,51.10077],[-114.32911,51.10017],[-114.32831,51.09983],[-114.32746,51.09925],[-114.32627,51.09947],[-114.32532,51.09999],[-114.3255,51.10077]]},{"id":"MS-02-W02","site":"MS-02","cls":"Shallow Open Water","ha":2.091,"ring":[[-114.3324,51.09573],[-114.3326,51.09607],[-114.33274,51.09659],[-114.33353,51.09635],[-114.33399,51.09623],[-114.33455,51.0961],[-114.33468,51.09573],[-114.3344,51.09541],[-114.33402,51.09519],[-114.33353,51.09469],[-114.33294,51.09509],[-114.33216,51.09523],[-114.3324,51.09573]]},{"id":"MS-02-W03","site":"MS-02","cls":"Bog","ha":6.61,"ring":[[-114.32415,51.102],[-114.32421,51.10248],[-114.32417,51.10348],[-114.32552,51.10312],[-114.32656,51.10314],[-114.32743,51.1027],[-114.32841,51.102],[-114.32808,51.10107],[-114.32634,51.1011],[-114.32552,51.10115],[-114.3245,51.10088],[-114.32292,51.10105],[-114.32415,51.102]]},{"id":"MS-02-W04","site":"MS-02","cls":"Shallow Open Water","ha":9.206,"ring":[[-114.32799,51.10356],[-114.32865,51.10452],[-114.32995,51.10501],[-114.33127,51.10483],[-114.3323,51.10469],[-114.33277,51.10411],[-114.33445,51.10356],[-114.33277,51.10301],[-114.33241,51.10232],[-114.33127,51.10248],[-114.32996,51.10212],[-114.32818,51.10243],[-114.32799,51.10356]]},{"id":"MS-02-W05","site":"MS-02","cls":"Fen","ha":1.945,"ring":[[-114.32501,51.10395],[-114.32479,51.10435],[-114.32522,51.10469],[-114.32589,51.10454],[-114.32631,51.1044],[-114.32724,51.10444],[-114.32684,51.10395],[-114.327,51.10355],[-114.32654,51.10324],[-114.32589,51.10325],[-114.32526,51.10326],[-114.32485,51.10357],[-114.32501,51.10395]]},{"id":"MS-03-W01","site":"MS-03","cls":"Shallow Open Water","ha":11.353,"ring":[[-114.29454,51.21792],[-114.29522,51.21869],[-114.29555,51.21987],[-114.29733,51.21934],[-114.29822,51.2189],[-114.29921,51.21861],[-114.29981,51.21792],[-114.30054,51.21675],[-114.2993,51.21576],[-114.29733,51.21643],[-114.29572,51.21617],[-114.29503,51.21709],[-114.29454,51.21792]]},{"id":"MS-03-W02","site":"MS-03","cls":"Marsh","ha":13.129,"ring":[[-114.29867,51.22126],[-114.29833,51.22227],[-114.29902,51.22354],[-114.30112,51.22246],[-114.30274,51.22303],[-114.30341,51.22209],[-114.30482,51.22126],[-114.30359,51.22036],[-114.30321,51.21897],[-114.30112,51.21994],[-114.29912,51.21908],[-114.29915,51.22054],[-114.29867,51.22126]]},{"id":"MS-03-W03","site":"MS-03","cls":"Fen","ha":14.828,"ring":[[-114.29729,51.21877],[-114.29733,51.21993],[-114.29865,51.2208],[-114.30052,51.22101],[-114.30191,51.22029],[-114.3023,51.21941],[-114.30406,51.21877],[-114.30286,51.21791],[-114.30185,51.21731],[-114.30052,51.21624],[-114.29868,51.21676],[-114.29824,51.21794],[-114.29729,51.21877]]},{"id":"MS-04-W01","site":"MS-04","cls":"Swamp","ha":17.261,"ring":[[-113.85604,51.02421],[-113.85441,51.02552],[-113.8563,51.02605],[-113.85798,51.02618],[-113.86012,51.02656],[-113.86028,51.02505],[-113.86086,51.02421],[-113.86158,51.0229],[-113.85999,51.02201],[-113.85798,51.02215],[-113.8561,51.02215],[-113.85459,51.02297],[-113.85604,51.02421]]},{"id":"MS-04-W02","site":"MS-04","cls":"Bog","ha":8.581,"ring":[[-113.85313,51.02024],[-113.85298,51.021],[-113.85375,51.02167],[-113.85505,51.02181],[-113.85639,51.02171],[-113.85749,51.02113],[-113.85797,51.02024],[-113.85693,51.01955],[-113.85645,51.0187],[-113.85505,51.0188],[-113.85386,51.01893],[-113.85383,51.01979],[-113.85313,51.02024]]},{"id":"MS-04-W03","site":"MS-04","cls":"Fen","ha":1.736,"ring":[[-113.84433,51.02338],[-113.84459,51.02365],[-113.84486,51.02391],[-113.84534,51.02423],[-113.84584,51.02393],[-113.8465,51.0238],[-113.84675,51.02338],[-113.84611,51.0231],[-113.84571,51.02297],[-113.84534,51.02295],[-113.84476,51.02275],[-113.84399,51.02289],[-113.84433,51.02338]]},{"id":"MS-04-W04","site":"MS-04","cls":"Shallow Open Water","ha":12.388,"ring":[[-113.84752,51.0218],[-113.84781,51.02243],[-113.84826,51.02319],[-113.84954,51.02437],[-113.85128,51.02372],[-113.85172,51.0226],[-113.85266,51.0218],[-113.85144,51.0211],[-113.8517,51.01942],[-113.84954,51.01984],[-113.84825,51.02039],[-113.84707,51.0209],[-113.84752,51.0218]]},{"id":"MS-04-W05","site":"MS-04","cls":"Marsh","ha":2.47,"ring":[[-113.85635,51.01599],[-113.85644,51.01653],[-113.8575,51.01646],[-113.85793,51.01648],[-113.85847,51.01657],[-113.85918,51.01644],[-113.85966,51.01599],[-113.85894,51.01562],[-113.85867,51.01518],[-113.85793,51.01546],[-113.85721,51.01519],[-113.85673,51.01555],[-113.85635,51.01599]]},{"id":"MS-04-W06","site":"MS-04","cls":"Fen","ha":8.93,"ring":[[-113.84856,51.01678],[-113.849,51.01779],[-113.8504,51.01826],[-113.85175,51.01781],[-113.85306,51.01823],[-113.85426,51.0177],[-113.85343,51.01678],[-113.85423,51.01587],[-113.85253,51.01592],[-113.85175,51.01526],[-113.85048,51.01539],[-113.84965,51.01601],[-113.84856,51.01678]]},{"id":"MS-05-W01","site":"MS-05","cls":"Shallow Open Water","ha":11.802,"ring":[[-113.89647,52.09663],[-113.89619,52.09767],[-113.89763,52.09822],[-113.89911,52.09869],[-113.90013,52.09773],[-113.90284,52.09796],[-113.90125,52.09663],[-113.90241,52.09545],[-113.90085,52.09477],[-113.89911,52.09505],[-113.89807,52.09551],[-113.89695,52.09586],[-113.89647,52.09663]]},{"id":"MS-05-W02","site":"MS-05","cls":"Bog","ha":7.468,"ring":[[-113.89605,52.10054],[-113.89678,52.10108],[-113.89747,52.10142],[-113.89828,52.10204],[-113.89949,52.10184],[-113.90002,52.10116],[-113.90067,52.10054],[-113.90069,52.09968],[-113.89956,52.09917],[-113.89828,52.09913],[-113.89711,52.09928],[-113.89586,52.09968],[-113.89605,52.10054]]},{"id":"MS-05-W03","site":"MS-05","cls":"Shallow Open Water","ha":2.515,"ring":[[-113.89585,52.10165],[-113.89612,52.10195],[-113.89652,52.10213],[-113.89697,52.1027],[-113.89771,52.10244],[-113.89846,52.10218],[-113.8988,52.10165],[-113.8981,52.10125],[-113.89764,52.10093],[-113.89697,52.10093],[-113.89633,52.10097],[-113.896,52.1013],[-113.89585,52.10165]]},{"id":"MS-05-W04","site":"MS-05","cls":"Swamp","ha":1.899,"ring":[[-113.90161,52.10006],[-113.90183,52.10036],[-113.90222,52.10054],[-113.90266,52.10053],[-113.90343,52.10088],[-113.90389,52.1005],[-113.90385,52.10006],[-113.90398,52.09959],[-113.90345,52.09923],[-113.90266,52.09928],[-113.90221,52.09958],[-113.90205,52.09985],[-113.90161,52.10006]]},{"id":"MS-06-W01","site":"MS-06","cls":"Swamp","ha":6.178,"ring":[[-115.04948,50.94648],[-115.04956,50.94723],[-115.0503,50.94791],[-115.0516,50.94767],[-115.05219,50.94713],[-115.05323,50.94708],[-115.05362,50.94648],[-115.05371,50.94571],[-115.05282,50.94514],[-115.0516,50.94535],[-115.05064,50.94543],[-115.05003,50.94591],[-115.04948,50.94648]]},{"id":"MS-06-W02","site":"MS-06","cls":"Shallow Open Water","ha":3.385,"ring":[[-115.0528,50.95166],[-115.05251,50.95225],[-115.05353,50.9523],[-115.05412,50.95265],[-115.05487,50.95249],[-115.05561,50.95221],[-115.05585,50.95166],[-115.05562,50.95111],[-115.05473,50.95099],[-115.05412,50.95093],[-115.05332,50.95079],[-115.0527,50.95114],[-115.0528,50.95166]]},{"id":"MS-06-W03","site":"MS-06","cls":"Fen","ha":10.717,"ring":[[-115.04525,50.95022],[-115.04556,50.9513],[-115.04705,50.95182],[-115.04851,50.95168],[-115.04934,50.95113],[-115.05085,50.95107],[-115.05167,50.95022],[-115.05052,50.94948],[-115.04992,50.94867],[-115.04851,50.94817],[-115.04773,50.94936],[-115.0459,50.94926],[-115.04525,50.95022]]},{"id":"MS-06-W04","site":"MS-06","cls":"Marsh","ha":3.328,"ring":[[-115.05082,50.95177],[-115.05072,50.95234],[-115.05169,50.95241],[-115.05227,50.9525],[-115.05311,50.9527],[-115.05349,50.95222],[-115.05405,50.95177],[-115.05361,50.95128],[-115.0531,50.95086],[-115.05227,50.951],[-115.0514,50.95082],[-115.05096,50.9513],[-115.05082,50.95177]]},{"id":"MS-06-W05","site":"MS-06","cls":"Bog","ha":4.659,"ring":[[-115.04523,50.94857],[-115.046,50.94892],[-115.04582,50.9498],[-115.04695,50.95003],[-115.04764,50.94933],[-115.04891,50.94929],[-115.04885,50.94857],[-115.04833,50.94807],[-115.04764,50.94781],[-115.04695,50.9471],[-115.04588,50.94741],[-115.04596,50.94821],[-115.04523,50.94857]]},{"id":"MS-06-W06","site":"MS-06","cls":"Swamp","ha":16.668,"ring":[[-115.05125,50.94878],[-115.05007,50.95021],[-115.05214,50.9508],[-115.05398,50.95047],[-115.05569,50.95066],[-115.05722,50.94996],[-115.05788,50.94878],[-115.05578,50.94811],[-115.05575,50.94683],[-115.05398,50.94671],[-115.05182,50.9464],[-115.05163,50.94792],[-115.05125,50.94878]]}],"streams":[{"site":"MS-01","name":"Elbow Creek (demo)","km":4.204,"order":3,"line":[[-114.21726,50.97924],[-114.2148,50.98101],[-114.21233,50.98399],[-114.20987,50.98248],[-114.2074,50.98351],[-114.20493,50.98189],[-114.20247,50.97938],[-114.2,50.98146],[-114.19753,50.97633],[-114.19507,50.97785],[-114.1926,50.97947],[-114.19013,50.97958],[-114.18767,50.97699],[-114.1852,50.97714],[-114.18274,50.98133]]},{"site":"MS-02","name":"Springbank Creek (demo)","km":3.314,"order":2,"line":[[-114.34416,51.10041],[-114.34214,51.10052],[-114.34012,51.1027],[-114.33809,51.1038],[-114.33607,51.10125],[-114.33405,51.10282],[-114.33202,51.10057],[-114.33,51.09902],[-114.32798,51.09822],[-114.32595,51.09687],[-114.32393,51.09739],[-114.32191,51.10134],[-114.31988,51.10059],[-114.31786,51.10297],[-114.31584,51.10156]]},{"site":"MS-03","name":"Rocky Creek (demo)","km":5.767,"order":3,"line":[[-114.32209,51.21965],[-114.31963,51.22056],[-114.31718,51.22331],[-114.31472,51.22505],[-114.31227,51.22478],[-114.30982,51.22455],[-114.30736,51.22273],[-114.30491,51.2213],[-114.30245,51.2206],[-114.3,51.21776],[-114.29755,51.21723],[-114.29509,51.21819],[-114.29264,51.21574],[-114.29018,51.21755],[-114.28773,51.21922],[-114.28528,51.21454],[-114.28282,51.21448],[-114.28037,51.22432],[-114.27791,51.21971]]},{"site":"MS-04","name":"Bow Creek (demo)","km":5.741,"order":2,"line":[[-113.87356,51.02159],[-113.87094,51.02006],[-113.86833,51.0236],[-113.86571,51.02516],[-113.86309,51.02586],[-113.86047,51.02561],[-113.85785,51.02363],[-113.85524,51.0251],[-113.85262,51.01817],[-113.85,51.01748],[-113.84738,51.01632],[-113.84476,51.01516],[-113.84215,51.01581],[-113.83953,51.01503],[-113.83691,51.01833],[-113.83429,51.01533],[-113.83167,51.01687],[-113.82906,51.01724],[-113.82644,51.0246]]},{"site":"MS-05","name":"Red Creek (demo)","km":4.935,"order":1,"line":[[-113.92091,52.10007],[-113.9183,52.10137],[-113.91568,52.10326],[-113.91307,52.10559],[-113.91046,52.10379],[-113.90784,52.10265],[-113.90523,52.10186],[-113.90261,52.10172],[-113.9,52.1031],[-113.89739,52.09764],[-113.89477,52.09466],[-113.89216,52.09867],[-113.88954,52.09801],[-113.88693,52.09618],[-113.88432,52.10076],[-113.8817,52.09996],[-113.87909,52.0974]]},{"site":"MS-06","name":"Kananaskis Creek (demo)","km":3.197,"order":3,"line":[[-115.06255,50.95066],[-115.06107,50.9502],[-115.0596,50.95259],[-115.05812,50.95249],[-115.05664,50.95162],[-115.05517,50.9508],[-115.05369,50.95094],[-115.05221,50.94835],[-115.05074,50.94972],[-115.04926,50.94711],[-115.04779,50.94933],[-115.04631,50.94823],[-115.04483,50.94852],[-115.04336,50.95183],[-115.04188,50.9509],[-115.0404,50.94994],[-115.03893,50.95136],[-115.03745,50.95184]]}],"obs":[{"id":"MS-01-O01","site":"MS-01","type":"Bird Survey Point","date":"2026-09-25","pt":[-114.19361,50.98579]},{"id":"MS-01-O02","site":"MS-01","type":"Vegetation Plot","date":"2026-08-01","pt":[-114.19208,50.97718]},{"id":"MS-01-O03","site":"MS-01","type":"Vegetation Plot","date":"2026-07-08","pt":[-114.18863,50.97656]},{"id":"MS-01-O04","site":"MS-01","type":"Soil Pit","date":"2026-05-03","pt":[-114.1995,50.9855]},{"id":"MS-01-O05","site":"MS-01","type":"Water Sample","date":"2026-09-25","pt":[-114.19442,50.97196]},{"id":"MS-01-O06","site":"MS-01","type":"Photo Point","date":"2026-09-06","pt":[-114.19479,50.98345]},{"id":"MS-01-O07","site":"MS-01","type":"Water Sample","date":"2026-06-18","pt":[-114.20905,50.97899]},{"id":"MS-02-O01","site":"MS-02","type":"Soil Pit","date":"2026-05-03","pt":[-114.33387,51.09992]},{"id":"MS-02-O02","site":"MS-02","type":"Water Sample","date":"2026-07-25","pt":[-114.32917,51.09903]},{"id":"MS-02-O03","site":"MS-02","type":"Soil Pit","date":"2026-08-18","pt":[-114.3326,51.09809]},{"id":"MS-02-O04","site":"MS-02","type":"Vegetation Plot","date":"2026-06-18","pt":[-114.33226,51.09942]},{"id":"MS-02-O05","site":"MS-02","type":"Water Sample","date":"2026-06-14","pt":[-114.32631,51.09603]},{"id":"MS-02-O06","site":"MS-02","type":"Water Sample","date":"2026-05-12","pt":[-114.32513,51.10083]},{"id":"MS-02-O07","site":"MS-02","type":"Bird Survey Point","date":"2026-07-25","pt":[-114.33338,51.0953]},{"id":"MS-02-O08","site":"MS-02","type":"Water Sample","date":"2026-09-24","pt":[-114.32591,51.0977]},{"id":"MS-03-O01","site":"MS-03","type":"Vegetation Plot","date":"2026-09-15","pt":[-114.29902,51.21657]},{"id":"MS-03-O02","site":"MS-03","type":"Water Sample","date":"2026-05-15","pt":[-114.31567,51.21627]},{"id":"MS-03-O03","site":"MS-03","type":"Photo Point","date":"2026-09-20","pt":[-114.29596,51.21238]},{"id":"MS-03-O04","site":"MS-03","type":"Bird Survey Point","date":"2026-09-27","pt":[-114.28447,51.21682]},{"id":"MS-03-O05","site":"MS-03","type":"Soil Pit","date":"2026-08-06","pt":[-114.31485,51.22464]},{"id":"MS-03-O06","site":"MS-03","type":"Bird Survey Point","date":"2026-07-25","pt":[-114.3134,51.22274]},{"id":"MS-04-O01","site":"MS-04","type":"Soil Pit","date":"2026-07-23","pt":[-113.83843,51.01984]},{"id":"MS-04-O02","site":"MS-04","type":"Water Sample","date":"2026-05-24","pt":[-113.85085,51.02405]},{"id":"MS-04-O03","site":"MS-04","type":"Water Sample","date":"2026-06-07","pt":[-113.85595,51.02863]},{"id":"MS-04-O04","site":"MS-04","type":"Bird Survey Point","date":"2026-09-25","pt":[-113.85049,51.01565]},{"id":"MS-04-O05","site":"MS-04","type":"Water Sample","date":"2026-06-10","pt":[-113.86555,51.01314]},{"id":"MS-04-O06","site":"MS-04","type":"Photo Point","date":"2026-09-05","pt":[-113.8547,51.02356]},{"id":"MS-04-O07","site":"MS-04","type":"Water Sample","date":"2026-07-23","pt":[-113.84705,51.02055]},{"id":"MS-04-O08","site":"MS-04","type":"Vegetation Plot","date":"2026-05-28","pt":[-113.85974,51.01274]},{"id":"MS-04-O09","site":"MS-04","type":"Water Sample","date":"2026-08-11","pt":[-113.8591,51.0171]},{"id":"MS-05-O01","site":"MS-05","type":"Vegetation Plot","date":"2026-05-15","pt":[-113.90314,52.09934]},{"id":"MS-05-O02","site":"MS-05","type":"Photo Point","date":"2026-07-17","pt":[-113.90254,52.0979]},{"id":"MS-05-O03","site":"MS-05","type":"Soil Pit","date":"2026-08-08","pt":[-113.90797,52.10289]},{"id":"MS-05-O04","site":"MS-05","type":"Water Sample","date":"2026-09-17","pt":[-113.90734,52.09849]},{"id":"MS-05-O05","site":"MS-05","type":"Bird Survey Point","date":"2026-08-11","pt":[-113.89599,52.09715]},{"id":"MS-05-O06","site":"MS-05","type":"Bird Survey Point","date":"2026-07-27","pt":[-113.90021,52.10119]},{"id":"MS-06-O01","site":"MS-06","type":"Water Sample","date":"2026-07-04","pt":[-115.05745,50.94722]},{"id":"MS-06-O02","site":"MS-06","type":"Bird Survey Point","date":"2026-09-11","pt":[-115.05669,50.95077]},{"id":"MS-06-O03","site":"MS-06","type":"Photo Point","date":"2026-08-23","pt":[-115.04969,50.95107]},{"id":"MS-06-O04","site":"MS-06","type":"Photo Point","date":"2026-05-02","pt":[-115.0513,50.94887]},{"id":"MS-06-O05","site":"MS-06","type":"Water Sample","date":"2026-06-18","pt":[-115.0478,50.94996]},{"id":"MS-06-O06","site":"MS-06","type":"Bird Survey Point","date":"2026-09-14","pt":[-115.05346,50.95185]},{"id":"MS-06-O07","site":"MS-06","type":"Vegetation Plot","date":"2026-08-21","pt":[-115.05012,50.94838]},{"id":"MS-06-O08","site":"MS-06","type":"Photo Point","date":"2026-07-02","pt":[-115.04661,50.94629]}],"months":["Apr","May","Jun","Jul","Aug","Sep","Oct"],"ndvi":{"MS-01":[0.394,0.527,0.657,0.82,0.788,0.616,0.476],"MS-02":[0.332,0.447,0.541,0.649,0.634,0.501,0.407],"MS-03":[0.4,0.487,0.622,0.714,0.72,0.609,0.462],"MS-04":[0.378,0.502,0.674,0.767,0.755,0.615,0.462],"MS-05":[0.408,0.545,0.662,0.834,0.782,0.62,0.452],"MS-06":[0.444,0.557,0.685,0.833,0.756,0.646,0.474]}};
+if(!D){return;}
+var FONT='system-ui,-apple-system,"Segoe UI",sans-serif';
+var CLS=["Shallow Open Water","Marsh","Fen","Swamp","Bog"];
+var CLSVAR={"Shallow Open Water":"--c1","Marsh":"--c2","Fen":"--c3","Swamp":"--c4","Bog":"--c5"};
+var $=function(id){return document.getElementById(id);};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+var fmt=function(n,d){d=d||0;return Number(n).toLocaleString("en-CA",{minimumFractionDigits:d,maximumFractionDigits:d});};
+var sum=function(a,f){return a.reduce(function(t,x){return t+f(x);},0);};
+var state={site:"all",type:"all",base:"osm"};
+var TYPES=Array.from(new Set(D.sites.map(function(s){return s.type;}))).sort();
+var MONTHS=D.months;
+var cond=function(n){return n<0.3?["Sparse",1]:n<0.5?["Moderate",2]:n<0.6?["Healthy",3]:["Dense",4];};
+var LAT0=51.3,KX=111320*Math.cos(LAT0*Math.PI/180),KY=110540;
+
+function filtered(){
+  return D.sites.filter(function(s){
+    return (state.site==="all"||s.id===state.site)&&(state.type==="all"||s.type===state.type);
+  });
+}
+
+/* ---------- projection ---------- */
+function fit(pts,W,H,pad){
+  var x0=1e99,x1=-1e99,y0=1e99,y1=-1e99;
+  pts.forEach(function(p){var x=p[0]*KX,y=-p[1]*KY;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;});
+  var bw=Math.max(x1-x0,1),bh=Math.max(y1-y0,1);
+  var s=Math.min((W-2*pad)/bw,(H-2*pad)/bh);
+  var ox=(W-bw*s)/2-x0*s,oy=(H-bh*s)/2-y0*s;
+  return {s:s,ox:ox,oy:oy,p:function(lo,la){return [lo*KX*s+ox,-la*KY*s+oy];}};
+}
+function pathOf(f,ring){return "M"+ring.map(function(p){return f.p(p[0],p[1]).map(function(v){return v.toFixed(1);}).join(",");}).join("L")+"Z";}
+function lineOf(f,pts){return "M"+pts.map(function(p){return f.p(p[0],p[1]).map(function(v){return v.toFixed(1);}).join(",");}).join("L");}
+function centroid(ring){var n=ring.length-1,a=0,b=0,i;for(i=0;i<n;i++){a+=ring[i][0];b+=ring[i][1];}return [a/n,b/n];}
+
+/* ---------- basemap tiles (OpenStreetMap, Web Mercator XYZ) ---------- */
+function tileLayer(f,W,H){
+  if(state.base!=="osm")return "";
+  var latC=-(H/2-f.oy)/f.s/KY;
+  var z=Math.max(5,Math.min(17,Math.round(Math.log2(156543.03*Math.cos(latC*Math.PI/180)*f.s)+0.4)));
+  var lonL=(0-f.ox)/f.s/KX,lonR=(W-f.ox)/f.s/KX,latT=-(0-f.oy)/f.s/KY,latB=-(H-f.oy)/f.s/KY;
+  function tx(lo,zz){return Math.floor((lo+180)/360*Math.pow(2,zz));}
+  function ty(la,zz){var r=la*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,zz));}
+  var x0,x1,y0,y1;
+  for(;;){
+    x0=tx(lonL,z);x1=tx(lonR,z);y0=ty(latT,z);y1=ty(latB,z);
+    if((x1-x0+1)*(y1-y0+1)<=48||z<=5)break;
+    z--;
+  }
+  var n=Math.pow(2,z),h="",x,y;
+  function lonOf(i){return i/n*360-180;}
+  function latOf(j){return Math.atan(Math.sinh(Math.PI*(1-2*j/n)))*180/Math.PI;}
+  for(x=x0;x<=x1;x++){for(y=y0;y<=y1;y++){
+    var a=f.p(lonOf(x),latOf(y)),b=f.p(lonOf(x+1),latOf(y+1));
+    h+='<image href="https://tile.openstreetmap.org/'+z+'/'+x+'/'+y+'.png" x="'+a[0].toFixed(2)+'" y="'+a[1].toFixed(2)+'" width="'+(b[0]-a[0]+0.6).toFixed(2)+'" height="'+(b[1]-a[1]+0.6).toFixed(2)+'" preserveAspectRatio="none"/>';
+  }}
+  return '<g class="tiles">'+h+'</g>';
+}
+function watchTiles(){
+  var attr=$("attr");attr.hidden=true;
+  var imgs=$("svg").querySelectorAll(".tiles image");
+  Array.prototype.forEach.call(imgs,function(im){
+    im.addEventListener("load",function(){attr.hidden=false;});
+    im.addEventListener("error",function(){if(im.parentNode)im.parentNode.removeChild(im);});
+  });
+}
+
+/* ---------- map ---------- */
+function drawRegion(W,H,fs){
+  var all=[];D.sites.forEach(function(s){s.ring.forEach(function(p){all.push(p);});});
+  var f=fit(all,W,H,64),on={},h=tileLayer(f,W,H);
+  fs.forEach(function(s){on[s.id]=1;});
+  var lonL=(0-f.ox)/f.s/KX,lonR=(W-f.ox)/f.s/KX,latT=-(0-f.oy)/f.s/KY,latB=-(H-f.oy)/f.s/KY,lo,la;
+  for(lo=Math.ceil(lonL*2)/2;lo<=lonR;lo+=0.5){var x=lo*KX*f.s+f.ox;h+='<line class="grat" x1="'+x+'" y1="0" x2="'+x+'" y2="'+H+'"/><text class="gl" x="'+(x+4)+'" y="'+(H-8)+'">'+Math.abs(lo).toFixed(1)+'°W</text>';}
+  for(la=Math.ceil(latB*2)/2;la<=latT;la+=0.5){var y=-la*KY*f.s+f.oy;h+='<line class="grat" x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'"/><text class="gl" x="8" y="'+(y-5)+'">'+la.toFixed(1)+'°N</text>';}
+  D.sites.forEach(function(s){h+='<path class="bnd" d="'+pathOf(f,s.ring)+'"/>';});
+  D.sites.slice().sort(function(a,b){return (on[a.id]?1:0)-(on[b.id]?1:0);}).forEach(function(s){
+    var c=f.p.apply(null,centroid(s.ring)),act=!!on[s.id],left=c[0]>W-96;
+    var tip=s.id+" "+s.name+" · "+s.type+" · "+fmt(s.area)+" ha";
+    h+='<g class="pin '+(act?"on":"off")+'" tabindex="0" role="button" data-site="'+s.id+'" data-tip="'+esc(tip)+'" aria-label="'+esc(tip)+'">'
+      +'<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="9"/>'
+      +'<text x="'+(c[0]+(left?-15:15)).toFixed(1)+'" y="'+(c[1]+4).toFixed(1)+'" text-anchor="'+(left?"end":"start")+'">'+s.id+'</text></g>';
+  });
+  $("svg").innerHTML=h;watchTiles();
+  $("mapTitle").textContent="Project sites";
+  $("mapSub").textContent=fs.length+" of "+D.sites.length+" sites shown. Select a pin to focus on a site.";
+  $("btnBack").hidden=true;
+  $("mapLegend").innerHTML='<span><i class="swc" style="background:var(--c1)"></i>In current filter</span><span><i class="swc" style="background:var(--axis)"></i>Filtered out</span><span>Pins mark site centres; boundaries are only 1 to 2 km across.</span>';
+}
+function niceScale(mPerPx){
+  var target=110*mPerPx,opts=[20,50,100,200,250,500,1000,2000,5000],best=opts[0];
+  opts.forEach(function(o){if(Math.abs(o-target)<Math.abs(best-target))best=o;});
+  return best;
+}
+function drawSite(W,H,s){
+  var wets=D.wetlands.filter(function(w){return w.site===s.id;});
+  var st=D.streams.filter(function(x){return x.site===s.id;});
+  var ob=D.obs.filter(function(o){return o.site===s.id;});
+  var pts=s.ring.slice();
+  wets.forEach(function(w){w.ring.forEach(function(p){pts.push(p);});});
+  st.forEach(function(x){x.line.forEach(function(p){pts.push(p);});});
+  ob.forEach(function(o){pts.push(o.pt);});
+  var f=fit(pts,W,H,44),h=tileLayer(f,W,H);
+  h+='<path class="sitepoly" d="'+pathOf(f,s.ring)+'" data-tip="'+esc(s.name+" · site boundary · "+fmt(s.area,1)+" ha")+'"/>';
+  var present={};
+  wets.forEach(function(w){
+    present[w.cls]=1;
+    h+='<path class="wet" style="fill:var('+CLSVAR[w.cls]+')" d="'+pathOf(f,w.ring)+'" data-tip="'+esc(w.cls+" · "+fmt(w.ha,2)+" ha · "+w.id)+'"/>';
+  });
+  st.forEach(function(x){
+    var d=lineOf(f,x.line),tip=x.name+" · "+fmt(x.km,2)+" km · stream order "+x.order;
+    h+='<path class="strm" d="'+d+'"/><path class="hit" d="'+d+'" data-tip="'+esc(tip)+'"/>';
+  });
+  ob.forEach(function(o){
+    var c=f.p(o.pt[0],o.pt[1]);
+    h+='<circle class="ob" cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="5" data-tip="'+esc(o.type+" · "+o.date+" · "+o.id)+'"/>';
+  });
+  var m=niceScale(1/f.s),len=m*f.s,lab=m>=1000?(m/1000)+" km":m+" m",y=H-22;
+  h+='<g><path class="sb" d="M16,'+(y-5)+'V'+y+'H'+(16+len)+'V'+(y-5)+'"/><text class="sbt" x="16" y="'+(y+14)+'">'+lab+'</text></g>';
+  h+='<g transform="translate('+(W-26)+',30)"><path d="M0,-14L6,6L0,2L-6,6Z" style="fill:var(--ink)"/><text class="sbt" x="0" y="20" text-anchor="middle">N</text></g>';
+  $("svg").innerHTML=h;watchTiles();
+  $("mapTitle").textContent=s.id+" "+s.name;
+  $("mapSub").textContent=s.type+" · surveyed "+s.date+" · "+fmt(s.wet,1)+" ha of wetland in "+fmt(s.area,1)+" ha";
+  $("btnBack").hidden=false;
+  var lg='<span><i class="swd"></i>Site boundary</span>';
+  CLS.forEach(function(c){if(present[c])lg+='<span><i class="sw" style="background:var('+CLSVAR[c]+')"></i>'+c+'</span>';});
+  lg+='<span><i class="swl"></i>Stream</span><span><i class="swc" style="background:var(--surface);border:1.75px solid var(--ink)"></i>Field observation</span>';
+  $("mapLegend").innerHTML=lg;
+}
+function drawMap(){
+  var el=$("map"),W=el.clientWidth,H=el.clientHeight;
+  if(!W||!H)return;
+  $("svg").setAttribute("viewBox","0 0 "+W+" "+H);
+  var fs=filtered();
+  if(state.site!=="all"&&fs.length===1)drawSite(W,H,fs[0]);else drawRegion(W,H,fs);
+}
+
+/* ---------- KPIs and table ---------- */
+function drawKpis(fs){
+  var area=sum(fs,function(s){return s.area;}),wet=sum(fs,function(s){return s.wet;}),stm=sum(fs,function(s){return s.stream;});
+  var nd=fs.length?sum(fs,function(s){return s.ndvi;})/fs.length:0,c=cond(nd);
+  var share=area?100*wet/area:0;
+  var tiles=[
+    ["Sites",fmt(fs.length),"","of "+D.sites.length+" in the portfolio"],
+    ["Area surveyed",fmt(area),"ha","across the shown sites"],
+    ["Wetland delineated",fmt(wet,1),"ha",fmt(share,1)+"% of surveyed area"],
+    ["Stream mapped",fmt(stm,1),"km","one channel per site"],
+    ["Mean NDVI",fmt(nd,2),"",'<i class="dot" style="background:var(--r'+c[1]+')"></i>'+c[0]+" vegetation"]
+  ];
+  $("kpis").innerHTML=tiles.map(function(t){
+    return '<div class="kpi"><div class="l">'+t[0]+'</div><div class="v">'+t[1]+(t[2]?"<small>"+t[2]+"</small>":"")+'</div><div class="s">'+t[3]+'</div></div>';
+  }).join("");
+}
+function drawRows(fs){
+  var on={};fs.forEach(function(s){on[s.id]=1;});
+  $("rows").innerHTML=D.sites.map(function(s){
+    var c=cond(s.ndvi);
+    return '<button type="button" class="row'+(state.site===s.id?" sel":"")+(on[s.id]?"":" off")+'" data-site="'+s.id+'">'
+      +'<span class="id">'+s.id+'</span>'
+      +'<span class="nm"><b>'+esc(s.name)+'</b><span>'+esc(s.type)+' · '+s.date+'</span></span>'
+      +'<span class="num" data-l="Area (ha)">'+fmt(s.area,1)+'</span>'
+      +'<span class="num" data-l="Wetland (ha)">'+fmt(s.wet,1)+'</span>'
+      +'<span class="num" data-l="Wetland share">'+fmt(s.wetPct,1)+'%</span>'
+      +'<span class="num" data-l="Stream (km)">'+fmt(s.stream,2)+'</span>'
+      +'<span class="nd" data-l="Mean NDVI"><span class="num">'+fmt(s.ndvi,2)+'</span><i class="dot" style="background:var(--r'+c[1]+')"></i><span>'+c[0]+'</span></span>'
+      +'</button>';
+  }).join("");
+}
+
+/* ---------- charts ---------- */
+var charts={};
+function kill(k){if(charts[k]){charts[k].destroy();charts[k]=null;}}
+function drawCharts(fs){
+  if(typeof Chart==="undefined"){
+    ["ndviNote","clsNote"].forEach(function(id){$(id).textContent="Charts did not load. Check your connection and reload.";});
+    return;
+  }
+  var ink=css("--ink"),ink2=css("--ink2"),muted=css("--muted"),grid=css("--grid"),axis=css("--axis"),surface=css("--surface"),c1=css("--c1");
+  Chart.defaults.font.family=FONT;Chart.defaults.font.size=12;Chart.defaults.color=ink2;
+  var still=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ids={};fs.forEach(function(s){ids[s.id]=1;});
+
+  /* NDVI */
+  kill("ndvi");
+  var ds=[];
+  var avg=MONTHS.map(function(_,i){return fs.length?sum(fs,function(s){return D.ndvi[s.id][i];})/fs.length:null;});
+  if(fs.length>1){
+    fs.forEach(function(s){ds.push({label:s.id+" "+s.name,data:D.ndvi[s.id],borderColor:muted,backgroundColor:muted,borderWidth:1.25,pointRadius:0,pointHoverRadius:4,tension:.3,order:2});});
+  }
+  ds.push({label:fs.length>1?"Average of "+fs.length+" sites":(fs[0]?fs[0].id+" "+fs[0].name:"No site"),data:avg,borderColor:c1,backgroundColor:c1,borderWidth:3,pointRadius:3.5,pointBackgroundColor:c1,pointBorderColor:surface,pointBorderWidth:2,pointHoverRadius:6,tension:.3,order:1});
+  charts.ndvi=new Chart($("cNdvi"),{type:"line",data:{labels:MONTHS.map(function(m){return m;}),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,animation:still?false:{duration:250},interaction:{mode:"nearest",intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+": "+c.parsed.y.toFixed(2);}}}},
+      scales:{x:{grid:{display:false},border:{color:axis},ticks:{color:ink2}},
+        y:{min:0,max:1,ticks:{stepSize:.2,color:muted,callback:function(v){return v.toFixed(1);}},grid:{color:grid},border:{display:false},title:{display:true,text:"NDVI",color:ink2}}}}});
+  var peak=Math.max.apply(null,avg.filter(function(v){return v!=null;}));
+  $("ndviNote").textContent=fs.length?("Peak "+peak.toFixed(2)+" in "+MONTHS[avg.indexOf(peak)]+"."):"No site matches the filter.";
+  $("ndviLegend").innerHTML=fs.length>1?'<span><i class="swl" style="border-top:3px solid var(--c1)"></i>Average of shown sites</span><span><i class="swl" style="border-top:1.5px solid var(--muted)"></i>Individual sites</span>':'<span><i class="swl" style="border-top:3px solid var(--c1)"></i>'+(fs[0]?esc(fs[0].name):"")+'</span>';
+
+  /* wetland classes */
+  kill("cls");
+  var rows=CLS.map(function(c){return {c:c,ha:sum(D.wetlands.filter(function(w){return ids[w.site]&&w.cls===c;}),function(w){return w.ha;})};}).filter(function(r){return r.ha>0;});
+  var tot=sum(rows,function(r){return r.ha;});
+  charts.cls=new Chart($("cCls"),{type:"doughnut",
+    data:{labels:rows.map(function(r){return r.c;}),datasets:[{data:rows.map(function(r){return r.ha;}),backgroundColor:rows.map(function(r){return css(CLSVAR[r.c]);}),borderColor:surface,borderWidth:2.5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"64%",animation:still?false:{duration:250},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+": "+fmt(c.parsed,1)+" ha ("+fmt(100*c.parsed/tot,0)+"%)";}}}}},
+    plugins:[{id:"center",afterDraw:function(ch){
+      var a=ch.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,cx=ch.ctx;
+      cx.save();cx.textAlign="center";cx.textBaseline="middle";
+      cx.fillStyle=ink;cx.font="650 22px "+FONT;cx.fillText(fmt(tot,1),x,y-8);
+      cx.fillStyle=ink2;cx.font="12px "+FONT;cx.fillText("ha wetland",x,y+14);cx.restore();}}]});
+  $("clsNote").textContent=fs.length+(fs.length===1?" site":" sites")+" shown.";
+  $("clsList").innerHTML=rows.map(function(r){return '<div><i class="sw" style="background:var('+CLSVAR[r.c]+')"></i>'+r.c+'<b>'+fmt(r.ha,1)+' ha · '+fmt(100*r.ha/tot,0)+'%</b></div>';}).join("");
+
+  /* service type */
+  kill("type");
+  var bt=TYPES.map(function(t){return {t:t,ha:sum(fs.filter(function(s){return s.type===t;}),function(s){return s.area;})};}).filter(function(r){return r.ha>0;}).sort(function(a,b){return b.ha-a.ha;});
+  charts.type=new Chart($("cType"),{type:"bar",
+    data:{labels:bt.map(function(r){return r.t;}),datasets:[{data:bt.map(function(r){return r.ha;}),backgroundColor:c1,borderRadius:{topRight:4,bottomRight:4},maxBarThickness:22}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:still?false:{duration:250},layout:{padding:{right:44}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.x,1)+" ha";}}}},
+      scales:{x:{beginAtZero:true,grid:{color:grid},border:{display:false},ticks:{color:muted}},y:{grid:{display:false},border:{color:axis},ticks:{color:ink2}}}},
+    plugins:[{id:"vals",afterDatasetsDraw:function(ch){
+      var m=ch.getDatasetMeta(0),cx=ch.ctx;cx.save();cx.fillStyle=ink;cx.font="600 12px "+FONT;cx.textBaseline="middle";
+      m.data.forEach(function(b,i){cx.fillText(fmt(bt[i].ha),b.x+6,b.y);});cx.restore();}}]});
+}
+
+/* ---------- controls ---------- */
+function fillSelects(){
+  $("selSite").innerHTML='<option value="all">All sites</option>'+D.sites.map(function(s){return '<option value="'+s.id+'">'+s.id+' · '+esc(s.name)+'</option>';}).join("");
+  $("selType").innerHTML='<option value="all">All service types</option>'+TYPES.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join("");
+}
+function render(){
+  var fs=filtered();
+  $("selSite").value=state.site;$("selType").value=state.type;$("selBase").value=state.base;
+  drawKpis(fs);drawMap();drawCharts(fs);drawRows(fs);
+}
+function setSite(id){state.site=(state.site===id)?"all":id;state.type="all";render();}
+
+$("selSite").addEventListener("change",function(e){state.site=e.target.value;state.type="all";render();});
+$("selType").addEventListener("change",function(e){state.type=e.target.value;state.site="all";render();});
+$("selBase").addEventListener("change",function(e){state.base=e.target.value;drawMap();});
+$("btnReset").addEventListener("click",function(){state.site="all";state.type="all";render();});
+$("btnBack").addEventListener("click",function(){state.site="all";state.type="all";render();});
+$("rows").addEventListener("click",function(e){var r=e.target.closest("[data-site]");if(r)setSite(r.getAttribute("data-site"));});
+$("map").addEventListener("click",function(e){var r=e.target.closest("[data-site]");if(r)setSite(r.getAttribute("data-site"));});
+$("map").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var r=e.target.closest&&e.target.closest("[data-site]");if(r){e.preventDefault();setSite(r.getAttribute("data-site"));}
+});
+
+/* tooltip */
+var tip=$("tip");
+function showTip(e){
+  var t=e.target.closest&&e.target.closest("[data-tip]");
+  if(!t){tip.hidden=true;return;}
+  var box=$("map").getBoundingClientRect();
+  tip.textContent=t.getAttribute("data-tip");tip.hidden=false;
+  var x=e.clientX-box.left+12,y=e.clientY-box.top+14,w=tip.offsetWidth,h=tip.offsetHeight;
+  if(x+w>box.width-4)x=Math.max(4,box.width-w-4);
+  if(y+h>box.height-4)y=Math.max(4,e.clientY-box.top-h-10);
+  tip.style.left=x+"px";tip.style.top=y+"px";
+}
+$("map").addEventListener("pointermove",showTip);
+$("map").addEventListener("pointerdown",showTip);
+$("map").addEventListener("pointerleave",function(){tip.hidden=true;});
+
+/* theme and size */
+try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",render);}catch(_){}
+try{new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});}catch(_){}
+try{var last=0;new ResizeObserver(function(){var w=$("map").clientWidth;if(w!==last){last=w;drawMap();}}).observe($("map"));}catch(_){}
+
+fillSelects();render();
+})();
+</script>
+</body>
+</html>

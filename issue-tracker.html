@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resident Issue Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+html,body{margin:0}
+/* Layout: filter strip, five KPI tiles, town map with report form beside three charts, then two working lists.
+   Palette: warm neutrals, blue-first categorical order. Map dots encode status only: overdue, open on target, closed. */
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --onc1:#ffffff;
+  --c1:#2a78d6; --c2:#eb6834; --water:#b6d3f2; --built:#efeee9; --warnink:#b3261e;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a;
+  --tipbg:#0b0b0b; --tipfg:#fcfcfb;
+  --sys:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --onc1:#0b0b0b;
+    --c1:#3987e5; --c2:#d95926; --water:#2b4f7a; --built:#232321; --warnink:#f08a80;
+    --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --onc1:#0b0b0b;
+  --c1:#3987e5; --c2:#d95926; --water:#2b4f7a; --built:#232321; --warnink:#f08a80;
+  --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sys);font-size:14px;line-height:1.45;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(24px,4.4vw,32px);line-height:1.15;font-weight:650;text-wrap:balance}
+.sub{color:var(--ink2);margin-top:4px;max-width:72ch}
+.demo{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--axis);color:var(--ink2);border-radius:999px;padding:4px 10px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px;min-width:0}
+.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}
+h2{font-size:15px;font-weight:650}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--c1);border-color:var(--c1);color:var(--onc1);font-weight:600}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.tr:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+select,input[type=text],textarea{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:8px 10px;max-width:100%}
+.filters{display:flex;flex-direction:column;gap:12px}
+.frow{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+.frow label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2);min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:1px solid var(--axis);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+.chip b{font-variant-numeric:tabular-nums;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--c1);border-color:var(--c1);color:var(--onc1)}
+.chip[aria-pressed="false"]{opacity:.75}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.main{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);border:0;border-right:1px solid var(--axis);padding:6px 12px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--c1);color:var(--onc1);font-weight:600}
+.mapwrap{position:relative;border:1px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--plane)}
+canvas#map{display:block;width:100%;height:auto}
+canvas#map.pick{cursor:crosshair}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:12px;padding:6px 9px;border-radius:6px;max-width:260px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{display:inline-block;border-radius:50%;flex:none}
+.grad{display:inline-block;width:110px;height:10px;border-radius:5px;border:1px solid var(--ring)}
+.readout{margin-top:10px;font-size:13px;color:var(--ink2);min-height:3.8em}
+.readout b{color:var(--ink);font-weight:600}
+.chartbox{position:relative;height:190px;margin-top:8px}
+.chartbox.tall{height:250px}
+.legend .swl{width:18px;height:0;border-top:2px solid var(--ink);display:inline-block}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2);min-width:0}
+.form .full{grid-column:1 / -1}
+.form textarea{resize:vertical;min-height:64px}
+.fnote{font-size:12px;color:var(--ink2)}
+.msg{font-size:13px;color:var(--ink);background:var(--plane);border:1px solid var(--grid);border-radius:8px;padding:8px 10px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.tablewrap{overflow-x:auto}
+.tablewrap.scroll{max-height:400px;overflow:auto}
+.tablewrap.scroll th{position:sticky;top:0;background:var(--surface);z-index:1}
+table{border-collapse:collapse;width:100%;min-width:480px;font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.r{text-align:right}
+th.r{text-align:right}
+td:first-child,td.r{white-space:nowrap}
+.tr{cursor:pointer}
+.tr:hover td,.tr.sel td{background:var(--plane)}
+.tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--c1)}
+.st{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-width:92ch}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}.two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){
+  .form{grid-template-columns:minmax(0,1fr)}
+  table{min-width:0;font-size:12px}
+  th,td{padding:6px 4px}
+  .st{white-space:normal;align-items:flex-start}
+  .st .dot{margin-top:4px}
+  .kpi:last-child:nth-child(odd){grid-column:1 / -1}
+  .frow label,.frow select{width:100%}
+}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Midspan Geospatial Ltd · Municipal services</p>
+      <h1>Resident Issue Tracker</h1>
+      <p class="sub">A year of resident reports for Prairie Hollow, a fictional prairie town of four wards. See what is open, what is overdue and where the same problems keep coming back. Data runs from 1 November 2025 to 31 October 2026.</p>
+    </div>
+    <span class="demo">Synthetic demo data</span>
+  </header>
+
+  <section class="card filters" aria-label="Filters">
+    <div class="frow">
+      <label>Period<select id="selPeriod"><option value="365">Last 12 months</option><option value="90">Last 90 days</option><option value="30">Last 30 days</option></select></label>
+      <label>Ward<select id="selWard"></select></label>
+      <button class="btn" id="btnReset" type="button">Reset filters</button>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Issue types"></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Summary indicators"></section>
+
+  <section class="main">
+    <div class="col">
+      <article class="card">
+        <div class="cardhead">
+          <div><h2 id="mapTitle">Reports across town</h2><p class="note" id="mapNote"></p></div>
+          <div class="seg" role="group" aria-label="Map view">
+            <button type="button" data-mode="reports" aria-pressed="true">Reports</button>
+            <button type="button" data-mode="hot" aria-pressed="false">Hotspots</button>
+          </div>
+        </div>
+        <div class="mapwrap">
+          <canvas id="map" width="1000" height="667" role="img" aria-label="Map of resident reports"></canvas>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="legend" id="legend"></div>
+        <p class="readout" id="readout"></p>
+      </article>
+
+      <article class="card">
+        <div class="cardhead"><div><h2>Report an issue</h2><p class="note">Demo form. A report you add stays on this page for this visit only and is not saved or sent.</p></div></div>
+        <form class="form" id="form" autocomplete="off">
+          <label>Issue type<select id="fType"></select></label>
+          <label>Location<button class="btn" id="btnPick" type="button">Choose on the map</button></label>
+          <label class="full">What is the problem?<textarea id="fDesc" maxlength="200" placeholder="For example: water pooling across the road after rain"></textarea></label>
+          <div class="full fnote" id="fLoc">No location chosen yet.</div>
+          <div class="full"><button class="btn pri" id="btnSubmit" type="submit" disabled>Submit report</button></div>
+          <div class="full msg" id="fMsg" hidden></div>
+        </form>
+      </article>
+    </div>
+
+    <div class="col">
+      <article class="card">
+        <h2>Reports per month</h2>
+        <p class="note">New reports by month received.</p>
+        <div class="chartbox"><canvas id="c1" role="img" aria-label="Bar chart of reports per month"></canvas></div>
+      </article>
+      <article class="card">
+        <h2>Reports by issue type</h2>
+        <p class="note">Select a bar to show only that type.</p>
+        <div class="chartbox tall"><canvas id="c2" role="img" aria-label="Bar chart of reports by issue type"></canvas></div>
+      </article>
+      <article class="card">
+        <h2>Days to close against target</h2>
+        <p class="note">Median days for closed reports. The tick marks each type's target.</p>
+        <div class="chartbox tall"><canvas id="c3" role="img" aria-label="Bar chart of median days to close against target"></canvas></div>
+        <div class="legend"><span><i class="lg" style="width:12px;height:12px;border-radius:3px;background:var(--c1)"></i>Median within target</span><span><i class="lg" style="width:12px;height:12px;border-radius:3px;background:var(--c2)"></i>Median over target</span><span><i class="swl"></i>Target</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="two">
+    <article class="card">
+      <div class="cardhead"><div><h2>Needs attention</h2><p class="note" id="attnNote"></p></div></div>
+      <div class="tablewrap scroll">
+        <table>
+          <thead><tr><th>Report</th><th>Issue</th><th>Street</th><th class="r">Age</th><th>Status</th></tr></thead>
+          <tbody id="attn"></tbody>
+        </table>
+      </div>
+    </article>
+    <article class="card">
+      <div class="cardhead"><div><h2>Repeat locations</h2><p class="note">Five or more reports within one 300 m map cell. Select a row to outline it on the map.</p></div></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th class="r">Reports</th><th>Near</th><th>Mostly</th><th>Latest</th></tr></thead>
+          <tbody id="rep"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <footer class="foot">
+    <p>Prairie Hollow, every road, report and response time on this page are invented for demonstration. No real people, places or services are shown, and real reports would never show names or addresses publicly.</p>
+    <p>Definitions: open means not yet closed. Overdue means an open report older than its type's target. Open now ignores the period filter and shows the position on 31 October 2026. The map is a schematic drawn from metre coordinates, north up.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = {"start":"2025-11-01","asof":364,"w":6000,"h":4000,"cats":[{"name":"Potholes and road damage","target":10},{"name":"Snow and ice","target":1},{"name":"Culverts and drainage","target":3},{"name":"Streetlights","target":14},{"name":"Illegal dumping","target":21},{"name":"Trees and brush","target":5},{"name":"Signs and signals","target":14}],"wards":["Ward 1 \u00b7 Northwest","Ward 2 \u00b7 Northeast","Ward 3 \u00b7 Southwest","Ward 4 \u00b7 Southeast"],"wardRects":[{"x0":0,"y0":2000,"x1":2800,"y1":4000},{"x0":2800,"y0":2000,"x1":6000,"y1":4000},{"x0":0,"y0":0,"x1":2800,"y1":2000},{"x0":2800,"y0":0,"x1":6000,"y1":2000}],"roads":[{"name":"Main Street","cls":"arterial","pts":[[0,2000],[1200,2050],[2400,1950],[3200,2000],[4500,2100],[6000,2050]]},{"name":"Centre Avenue","cls":"arterial","pts":[[2800,0],[2820,1000],[2800,2000],[2850,3000],[2800,4000]]},{"name":"Ring Road","cls":"collector","pts":[[1600,1100],[4000,1100],[4200,2900],[1800,2900],[1600,1100]]},{"name":"1st Street","cls":"local","pts":[[2000,1300],[2000,2700]]},{"name":"2nd Street","cls":"local","pts":[[2300,1300],[2300,2700]]},{"name":"3rd Street","cls":"local","pts":[[2600,1300],[2600,2700]]},{"name":"4th Street","cls":"local","pts":[[3100,1300],[3100,2700]]},{"name":"5th Street","cls":"local","pts":[[3400,1300],[3400,2700]]},{"name":"6th Street","cls":"local","pts":[[3700,1300],[3700,2700]]},{"name":"Oak Lane","cls":"local","pts":[[1800,1400],[3900,1400]]},{"name":"Elm Lane","cls":"local","pts":[[1800,1700],[3900,1700]]},{"name":"Birch Lane","cls":"local","pts":[[1800,2300],[3900,2300]]},{"name":"Maple Lane","cls":"local","pts":[[1800,2600],[3900,2600]]},{"name":"Township Road 240","cls":"rural","pts":[[0,3600],[3000,3620],[6000,3580]]},{"name":"Township Road 230","cls":"rural","pts":[[0,450],[3000,430],[6000,470]]},{"name":"Range Road 20","cls":"rural","pts":[[900,0],[900,885],[880,2000],[900,4000]]},{"name":"Range Road 30","cls":"rural","pts":[[5200,0],[5200,705],[5180,2050],[5200,4000]]},{"name":"Creek Road","cls":"rural","pts":[[3900,1100],[4300,700],[4700,450],[5200,300]]}],"creek":[[0,1000],[600,950],[900,885],[1500,800],[2100,900],[2815,1010],[3300,880],[3800,780],[4500,640],[5200,705],[6000,900]],"labels":[{"t":"Main Street","x":520,"y":2085},{"t":"Centre Avenue","x":2960,"y":300},{"t":"Willow Creek","x":1650,"y":735},{"t":"Town centre","x":2800,"y":2810},{"t":"Township Road 240","x":600,"y":3660},{"t":"Township Road 230","x":600,"y":510},{"t":"Range Road 20","x":1020,"y":3250},{"t":"Range Road 30","x":5320,"y":3250}],"channels":["Web form","Mobile app","Phone","Email"],"reports":[{"t":2,"c":1,"x":4779,"y":426,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0001"},{"t":4,"c":1,"x":2793,"y":1022,"w":2,"r":"Centre Avenue","ch":"Phone","ack":0,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0002"},{"t":4,"c":3,"x":2305,"y":2049,"w":0,"r":"2nd Street","ch":"Email","ack":1,"cl":3,"desc":"Light flickering","id":"R-0003"},{"t":6,"c":3,"x":2999,"y":2593,"w":1,"r":"Maple Lane","ch":"Mobile app","ack":1,"cl":16,"desc":"Pole leaning and light off","id":"R-0004"},{"t":7,"c":3,"x":3385,"y":2301,"w":1,"r":"Birch Lane","ch":"Email","ack":2,"cl":10,"desc":"Pole leaning and light off","id":"R-0005"},{"t":8,"c":1,"x":2919,"y":2300,"w":1,"r":"Birch Lane","ch":"Mobile app","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0006"},{"t":10,"c":3,"x":3393,"y":1911,"w":3,"r":"5th Street","ch":"Web form","ack":1,"cl":15,"desc":"Pole leaning and light off","id":"R-0007"},{"t":12,"c":1,"x":2811,"y":3646,"w":1,"r":"Centre Avenue","ch":"Phone","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0008"},{"t":14,"c":3,"x":3247,"y":2599,"w":1,"r":"Maple Lane","ch":"Mobile app","ack":1,"cl":8,"desc":"Streetlight out","id":"R-0009"},{"t":15,"c":1,"x":4396,"y":635,"w":3,"r":"Creek Road","ch":"Mobile app","ack":0,"cl":0,"desc":"Icy patch, needs sanding","id":"R-0010"},{"t":16,"c":0,"x":3089,"y":1975,"w":3,"r":"4th Street","ch":"Web form","ack":1,"cl":6,"desc":"Road edge breaking up","id":"R-0011"},{"t":16,"c":0,"x":4882,"y":2082,"w":1,"r":"Main Street","ch":"Web form","ack":1,"cl":8,"desc":"Patch has failed, loose gravel on the road","id":"R-0012"},{"t":18,"c":3,"x":3400,"y":1694,"w":3,"r":"5th Street","ch":"Mobile app","ack":0,"cl":7,"desc":"Light flickering","id":"R-0013"},{"t":18,"c":3,"x":3709,"y":1398,"w":3,"r":"Oak Lane","ch":"Web form","ack":2,"cl":9,"desc":"Streetlight out","id":"R-0014"},{"t":19,"c":1,"x":2544,"y":430,"w":2,"r":"Township Road 230","ch":"Web form","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0015"},{"t":20,"c":3,"x":2707,"y":1700,"w":2,"r":"Elm Lane","ch":"Web form","ack":1,"cl":254,"desc":"Streetlight out","id":"R-0016"},{"t":23,"c":1,"x":5020,"y":359,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0017"},{"t":23,"c":3,"x":3767,"y":2306,"w":1,"r":"Birch Lane","ch":"Email","ack":2,"cl":15,"desc":"Streetlight out","id":"R-0018"},{"t":25,"c":3,"x":3393,"y":2199,"w":1,"r":"5th Street","ch":"Mobile app","ack":0,"cl":5,"desc":"Whole block dark","id":"R-0019"},{"t":28,"c":0,"x":4177,"y":2778,"w":1,"r":"Ring Road","ch":"Web form","ack":2,"cl":11,"desc":"Pothole in the travelled lane","id":"R-0020"},{"t":28,"c":3,"x":3045,"y":1683,"w":3,"r":"Elm Lane","ch":"Email","ack":2,"cl":5,"desc":"Whole block dark","id":"R-0021"},{"t":29,"c":6,"x":754,"y":2029,"w":0,"r":"Main Street","ch":"Web form","ack":1,"cl":7,"desc":"Crosswalk sign damaged","id":"R-0022"},{"t":30,"c":1,"x":2796,"y":1054,"w":2,"r":"Centre Avenue","ch":"Phone","ack":1,"cl":1,"desc":"Slippery hill, needs grading","id":"R-0023"},{"t":30,"c":3,"x":2790,"y":1705,"w":2,"r":"Elm Lane","ch":"Phone","ack":1,"cl":7,"desc":"Pole leaning and light off","id":"R-0024"},{"t":33,"c":3,"x":2002,"y":1813,"w":2,"r":"1st Street","ch":"Mobile app","ack":0,"cl":4,"desc":"Light flickering","id":"R-0025"},{"t":34,"c":1,"x":5184,"y":2826,"w":1,"r":"Range Road 30","ch":"Web form","ack":0,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0026"},{"t":34,"c":3,"x":3201,"y":2303,"w":1,"r":"Birch Lane","ch":"Web form","ack":1,"cl":8,"desc":"Whole block dark","id":"R-0027"},{"t":35,"c":1,"x":3984,"y":1031,"w":3,"r":"Creek Road","ch":"Web form","ack":0,"cl":0,"desc":"Ice on the bridge deck","id":"R-0028"},{"t":37,"c":6,"x":5085,"y":2071,"w":1,"r":"Main Street","ch":"Mobile app","ack":1,"cl":4,"desc":"Crosswalk sign damaged","id":"R-0029"},{"t":38,"c":0,"x":2250,"y":1398,"w":2,"r":"Oak Lane","ch":"Web form","ack":1,"cl":9,"desc":"Road edge breaking up","id":"R-0030"},{"t":38,"c":1,"x":967,"y":441,"w":2,"r":"Township Road 230","ch":"Email","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0031"},{"t":38,"c":1,"x":3768,"y":1097,"w":3,"r":"Ring Road","ch":"Mobile app","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0032"},{"t":40,"c":1,"x":4816,"y":416,"w":3,"r":"Creek Road","ch":"Email","ack":1,"cl":1,"desc":"Ice on the bridge deck","id":"R-0033"},{"t":41,"c":1,"x":5199,"y":3583,"w":1,"r":"Range Road 30","ch":"Phone","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0034"},{"t":41,"c":3,"x":3402,"y":2613,"w":1,"r":"5th Street","ch":"Mobile app","ack":0,"cl":5,"desc":"Whole block dark","id":"R-0035"},{"t":41,"c":4,"x":4294,"y":677,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":89,"desc":"Household waste dumped at pull-off","id":"R-0036"},{"t":43,"c":1,"x":905,"y":795,"w":2,"r":"Range Road 20","ch":"Phone","ack":0,"cl":0,"desc":"Drifted snow across the road","id":"R-0037"},{"t":45,"c":3,"x":1738,"y":2306,"w":0,"r":"Ring Road","ch":"Mobile app","ack":2,"cl":5,"desc":"Pole leaning and light off","id":"R-0038"},{"t":46,"c":1,"x":2795,"y":1054,"w":2,"r":"Centre Avenue","ch":"Web form","ack":1,"cl":1,"desc":"Ice on the bridge deck","id":"R-0039"},{"t":47,"c":1,"x":2805,"y":1056,"w":3,"r":"Centre Avenue","ch":"Web form","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0040"},{"t":48,"c":3,"x":2607,"y":1771,"w":2,"r":"3rd Street","ch":"Web form","ack":1,"cl":51,"desc":"Light flickering","id":"R-0041"},{"t":49,"c":3,"x":3108,"y":1699,"w":3,"r":"Elm Lane","ch":"Phone","ack":2,"cl":9,"desc":"Light flickering","id":"R-0042"},{"t":50,"c":1,"x":2756,"y":2906,"w":0,"r":"Ring Road","ch":"Email","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0043"},{"t":52,"c":1,"x":310,"y":455,"w":2,"r":"Township Road 230","ch":"Phone","ack":1,"cl":1,"desc":"Slippery hill, needs grading","id":"R-0044"},{"t":52,"c":1,"x":5940,"y":468,"w":3,"r":"Township Road 230","ch":"Phone","ack":1,"cl":1,"desc":"Slippery hill, needs grading","id":"R-0045"},{"t":52,"c":3,"x":2004,"y":1310,"w":2,"r":"1st Street","ch":"Mobile app","ack":1,"cl":7,"desc":"Streetlight out","id":"R-0046"},{"t":54,"c":1,"x":5196,"y":313,"w":3,"r":"Range Road 30","ch":"Mobile app","ack":0,"cl":0,"desc":"Ice on the bridge deck","id":"R-0047"},{"t":55,"c":1,"x":5676,"y":467,"w":3,"r":"Township Road 230","ch":"Web form","ack":1,"cl":1,"desc":"Slippery hill, needs grading","id":"R-0048"},{"t":55,"c":6,"x":2600,"y":2395,"w":0,"r":"3rd Street","ch":"Phone","ack":1,"cl":4,"desc":"Crosswalk sign damaged","id":"R-0049"},{"t":56,"c":3,"x":3112,"y":1932,"w":3,"r":"4th Street","ch":"Mobile app","ack":1,"cl":15,"desc":"Streetlight out","id":"R-0050"},{"t":61,"c":3,"x":2146,"y":2598,"w":0,"r":"Maple Lane","ch":"Mobile app","ack":1,"cl":19,"desc":"Streetlight out","id":"R-0051"},{"t":62,"c":6,"x":2809,"y":1347,"w":3,"r":"Centre Avenue","ch":"Web form","ack":1,"cl":7,"desc":"Stop sign bent or faded","id":"R-0052"},{"t":63,"c":1,"x":2779,"y":1010,"w":2,"r":"Centre Avenue","ch":"Web form","ack":0,"cl":1,"desc":"Drifted snow across the road","id":"R-0053"},{"t":63,"c":3,"x":3387,"y":2431,"w":1,"r":"5th Street","ch":"Mobile app","ack":2,"cl":12,"desc":"Pole leaning and light off","id":"R-0054"},{"t":64,"c":1,"x":2826,"y":1015,"w":3,"r":"Centre Avenue","ch":"Web form","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0055"},{"t":64,"c":1,"x":5409,"y":466,"w":3,"r":"Township Road 230","ch":"Web form","ack":1,"cl":2,"desc":"Slippery hill, needs grading","id":"R-0056"},{"t":64,"c":5,"x":3095,"y":2280,"w":1,"r":"4th Street","ch":"Mobile app","ack":0,"cl":5,"desc":"Brush blocking sightline","id":"R-0057"},{"t":64,"c":6,"x":3520,"y":2610,"w":1,"r":"Maple Lane","ch":"Web form","ack":0,"cl":11,"desc":"Street name sign down","id":"R-0058"},{"t":65,"c":1,"x":5200,"y":133,"w":3,"r":"Range Road 30","ch":"Phone","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0059"},{"t":68,"c":6,"x":708,"y":2036,"w":0,"r":"Main Street","ch":"Web form","ack":1,"cl":3,"desc":"Street name sign down","id":"R-0060"},{"t":69,"c":1,"x":24,"y":452,"w":2,"r":"Township Road 230","ch":"Mobile app","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0061"},{"t":70,"c":1,"x":5203,"y":3298,"w":1,"r":"Range Road 30","ch":"Mobile app","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0062"},{"t":70,"c":4,"x":5529,"y":3587,"w":1,"r":"Township Road 240","ch":"Mobile app","ack":2,"cl":11,"desc":"Furniture left beside road","id":"R-0063"},{"t":71,"c":1,"x":5115,"y":2071,"w":1,"r":"Main Street","ch":"Email","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0064"},{"t":71,"c":1,"x":5197,"y":913,"w":3,"r":"Range Road 30","ch":"Email","ack":0,"cl":0,"desc":"Ice on the bridge deck","id":"R-0065"},{"t":71,"c":3,"x":1989,"y":1557,"w":2,"r":"1st Street","ch":"Email","ack":3,"cl":7,"desc":"Light flickering","id":"R-0066"},{"t":72,"c":1,"x":5034,"y":342,"w":3,"r":"Creek Road","ch":"Mobile app","ack":0,"cl":0,"desc":"Ice on the bridge deck","id":"R-0067"},{"t":72,"c":3,"x":403,"y":2019,"w":0,"r":"Main Street","ch":"Mobile app","ack":6,"cl":9,"desc":"Whole block dark","id":"R-0068"},{"t":72,"c":3,"x":3414,"y":2465,"w":1,"r":"5th Street","ch":"Phone","ack":1,"cl":9,"desc":"Whole block dark","id":"R-0069"},{"t":78,"c":3,"x":2607,"y":1334,"w":2,"r":"3rd Street","ch":"Web form","ack":3,"cl":6,"desc":"Streetlight out","id":"R-0070"},{"t":79,"c":1,"x":897,"y":816,"w":2,"r":"Range Road 20","ch":"Phone","ack":0,"cl":0,"desc":"Icy patch, needs sanding","id":"R-0071"},{"t":81,"c":3,"x":3409,"y":1838,"w":3,"r":"5th Street","ch":"Mobile app","ack":0,"cl":8,"desc":"Pole leaning and light off","id":"R-0072"},{"t":84,"c":3,"x":3402,"y":1679,"w":3,"r":"5th Street","ch":"Web form","ack":0,"cl":7,"desc":"Whole block dark","id":"R-0073"},{"t":84,"c":5,"x":5189,"y":307,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":4,"desc":"Overhanging branches near sign","id":"R-0074"},{"t":86,"c":1,"x":456,"y":444,"w":2,"r":"Township Road 230","ch":"Mobile app","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0075"},{"t":88,"c":2,"x":5198,"y":765,"w":3,"r":"Range Road 30","ch":"Web form","ack":0,"cl":1,"desc":"Culvert blocked by debris","id":"R-0076"},{"t":89,"c":3,"x":3107,"y":1675,"w":3,"r":"4th Street","ch":"Web form","ack":1,"cl":12,"desc":"Pole leaning and light off","id":"R-0077"},{"t":90,"c":1,"x":3368,"y":2906,"w":1,"r":"Ring Road","ch":"Phone","ack":1,"cl":1,"desc":"Ice on the bridge deck","id":"R-0078"},{"t":90,"c":6,"x":1692,"y":2022,"w":0,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":7,"desc":"Speed sign missing","id":"R-0079"},{"t":91,"c":5,"x":4307,"y":702,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":2,"desc":"Brush blocking sightline","id":"R-0080"},{"t":93,"c":3,"x":2913,"y":1695,"w":3,"r":"Elm Lane","ch":"Phone","ack":1,"cl":7,"desc":"Streetlight out","id":"R-0081"},{"t":94,"c":3,"x":2010,"y":2142,"w":0,"r":"1st Street","ch":"Web form","ack":1,"cl":7,"desc":"Streetlight out","id":"R-0082"},{"t":100,"c":3,"x":1678,"y":1733,"w":2,"r":"Ring Road","ch":"Web form","ack":1,"cl":7,"desc":"Pole leaning and light off","id":"R-0083"},{"t":102,"c":3,"x":2301,"y":1599,"w":2,"r":"2nd Street","ch":"Web form","ack":0,"cl":7,"desc":"Pole leaning and light off","id":"R-0084"},{"t":103,"c":1,"x":490,"y":2024,"w":0,"r":"Main Street","ch":"Web form","ack":0,"cl":0,"desc":"Ice on the bridge deck","id":"R-0085"},{"t":104,"c":3,"x":3747,"y":2306,"w":1,"r":"Birch Lane","ch":"Web form","ack":4,"cl":12,"desc":"Pole leaning and light off","id":"R-0086"},{"t":105,"c":1,"x":2767,"y":958,"w":2,"r":"Centre Avenue","ch":"Phone","ack":1,"cl":1,"desc":"Ice on the bridge deck","id":"R-0087"},{"t":105,"c":1,"x":3140,"y":2001,"w":1,"r":"Main Street","ch":"Web form","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0088"},{"t":107,"c":1,"x":895,"y":3328,"w":0,"r":"Range Road 20","ch":"Web form","ack":1,"cl":1,"desc":"Ice on the bridge deck","id":"R-0089"},{"t":110,"c":1,"x":3922,"y":1065,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":1,"desc":"Slippery hill, needs grading","id":"R-0090"},{"t":111,"c":3,"x":2324,"y":1700,"w":2,"r":"Elm Lane","ch":"Mobile app","ack":4,"cl":10,"desc":"Light flickering","id":"R-0091"},{"t":114,"c":1,"x":5662,"y":3587,"w":1,"r":"Township Road 240","ch":"Mobile app","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0092"},{"t":115,"c":6,"x":3063,"y":1400,"w":3,"r":"Oak Lane","ch":"Web form","ack":1,"cl":5,"desc":"Street name sign down","id":"R-0093"},{"t":116,"c":1,"x":4031,"y":1374,"w":3,"r":"Ring Road","ch":"Mobile app","ack":0,"cl":0,"desc":"Icy patch, needs sanding","id":"R-0094"},{"t":116,"c":3,"x":2274,"y":2900,"w":0,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":10,"desc":"Pole leaning and light off","id":"R-0095"},{"t":116,"c":3,"x":3241,"y":1708,"w":3,"r":"Elm Lane","ch":"Web form","ack":1,"cl":16,"desc":"Streetlight out","id":"R-0096"},{"t":117,"c":6,"x":1140,"y":2040,"w":0,"r":"Main Street","ch":"Mobile app","ack":1,"cl":11,"desc":"Crosswalk sign damaged","id":"R-0097"},{"t":119,"c":1,"x":5206,"y":195,"w":3,"r":"Range Road 30","ch":"Web form","ack":0,"cl":0,"desc":"Slippery hill, needs grading","id":"R-0098"},{"t":120,"c":0,"x":2702,"y":1973,"w":2,"r":"Main Street","ch":"Phone","ack":1,"cl":4,"desc":"Patch has failed, loose gravel on the road","id":"R-0099"},{"t":120,"c":2,"x":918,"y":881,"w":2,"r":"Range Road 20","ch":"Web form","ack":1,"cl":1,"desc":"Water pooling on the road","id":"R-0100"},{"t":121,"c":5,"x":2594,"y":1928,"w":2,"r":"3rd Street","ch":"Phone","ack":0,"cl":4,"desc":"Brush blocking sightline","id":"R-0101"},{"t":122,"c":0,"x":3316,"y":1701,"w":3,"r":"Elm Lane","ch":"Mobile app","ack":1,"cl":25,"desc":"Pothole in the travelled lane","id":"R-0102"},{"t":124,"c":6,"x":3506,"y":2894,"w":1,"r":"Ring Road","ch":"Web form","ack":0,"cl":9,"desc":"Stop sign bent or faded","id":"R-0103"},{"t":125,"c":3,"x":2598,"y":1359,"w":2,"r":"3rd Street","ch":"Phone","ack":1,"cl":5,"desc":"Streetlight out","id":"R-0104"},{"t":125,"c":3,"x":2782,"y":1706,"w":2,"r":"Elm Lane","ch":"Phone","ack":1,"cl":12,"desc":"Light flickering","id":"R-0105"},{"t":127,"c":5,"x":3613,"y":2892,"w":1,"r":"Ring Road","ch":"Mobile app","ack":2,"cl":2,"desc":"Overhanging branches near sign","id":"R-0106"},{"t":132,"c":0,"x":2819,"y":2392,"w":1,"r":"Centre Avenue","ch":"Mobile app","ack":2,"cl":5,"desc":"Road edge breaking up","id":"R-0107"},{"t":135,"c":0,"x":2612,"y":2237,"w":0,"r":"3rd Street","ch":"Web form","ack":1,"cl":8,"desc":"Road edge breaking up","id":"R-0108"},{"t":137,"c":2,"x":2238,"y":2888,"w":0,"r":"Ring Road","ch":"Web form","ack":0,"cl":5,"desc":"Water pooling on the road","id":"R-0109"},{"t":139,"c":2,"x":1724,"y":2219,"w":0,"r":"Ring Road","ch":"Web form","ack":1,"cl":2,"desc":"Water pooling on the road","id":"R-0110"},{"t":141,"c":1,"x":3987,"y":1020,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":1,"desc":"Icy patch, needs sanding","id":"R-0111"},{"t":142,"c":0,"x":3701,"y":1975,"w":3,"r":"6th Street","ch":"Phone","ack":1,"cl":9,"desc":"Patch has failed, loose gravel on the road","id":"R-0112"},{"t":142,"c":3,"x":2713,"y":1706,"w":2,"r":"Elm Lane","ch":"Email","ack":4,"cl":5,"desc":"Pole leaning and light off","id":"R-0113"},{"t":143,"c":0,"x":4586,"y":2106,"w":1,"r":"Main Street","ch":"Phone","ack":1,"cl":5,"desc":"Pothole in the travelled lane","id":"R-0114"},{"t":144,"c":6,"x":1651,"y":2016,"w":0,"r":"Main Street","ch":"Phone","ack":3,"cl":11,"desc":"Stop sign bent or faded","id":"R-0115"},{"t":147,"c":2,"x":5196,"y":681,"w":3,"r":"Range Road 30","ch":"Email","ack":2,"cl":2,"desc":"Water pooling on the road","id":"R-0116"},{"t":148,"c":3,"x":3555,"y":2303,"w":1,"r":"Birch Lane","ch":"Phone","ack":1,"cl":25,"desc":"Light flickering","id":"R-0117"},{"t":150,"c":0,"x":2651,"y":1975,"w":2,"r":"Main Street","ch":"Phone","ack":1,"cl":3,"desc":"Patch has failed, loose gravel on the road","id":"R-0118"},{"t":150,"c":2,"x":4112,"y":883,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":2,"desc":"Culvert blocked by debris","id":"R-0119"},{"t":150,"c":2,"x":5195,"y":1416,"w":3,"r":"Range Road 30","ch":"Web form","ack":0,"cl":6,"desc":"Water pooling on the road","id":"R-0120"},{"t":150,"c":6,"x":3402,"y":2709,"w":1,"r":"5th Street","ch":"Phone","ack":2,"cl":8,"desc":"Crosswalk sign damaged","id":"R-0121"},{"t":151,"c":5,"x":3084,"y":2510,"w":1,"r":"4th Street","ch":"Web form","ack":1,"cl":4,"desc":"Dead tree leaning over road","id":"R-0122"},{"t":153,"c":0,"x":2928,"y":1962,"w":3,"r":"Main Street","ch":"Mobile app","ack":1,"cl":21,"desc":"Deep pothole near the intersection","id":"R-0123"},{"t":154,"c":0,"x":3707,"y":2407,"w":1,"r":"6th Street","ch":"Phone","ack":2,"cl":10,"desc":"Road edge breaking up","id":"R-0124"},{"t":154,"c":0,"x":3824,"y":1700,"w":3,"r":"Elm Lane","ch":"Phone","ack":2,"cl":7,"desc":"Road edge breaking up","id":"R-0125"},{"t":154,"c":2,"x":5184,"y":743,"w":3,"r":"Range Road 30","ch":"Web form","ack":0,"cl":3,"desc":"Water pooling on the road","id":"R-0126"},{"t":155,"c":0,"x":2603,"y":1972,"w":2,"r":"3rd Street","ch":"Phone","ack":1,"cl":28,"desc":"Road edge breaking up","id":"R-0127"},{"t":156,"c":0,"x":1996,"y":1323,"w":2,"r":"1st Street","ch":"Web form","ack":1,"cl":96,"desc":"Deep pothole near the intersection","id":"R-0128"},{"t":156,"c":0,"x":2913,"y":1996,"w":3,"r":"Main Street","ch":"Phone","ack":2,"cl":21,"desc":"Road edge breaking up","id":"R-0129"},{"t":158,"c":0,"x":2597,"y":2494,"w":0,"r":"3rd Street","ch":"Phone","ack":1,"cl":28,"desc":"Patch has failed, loose gravel on the road","id":"R-0130"},{"t":158,"c":3,"x":2599,"y":2135,"w":0,"r":"3rd Street","ch":"Web form","ack":1,"cl":53,"desc":"Light flickering","id":"R-0131"},{"t":159,"c":0,"x":571,"y":2025,"w":0,"r":"Main Street","ch":"Email","ack":2,"cl":6,"desc":"Deep pothole near the intersection","id":"R-0132"},{"t":159,"c":0,"x":3476,"y":1694,"w":3,"r":"Elm Lane","ch":"Phone","ack":1,"cl":19,"desc":"Road edge breaking up","id":"R-0133"},{"t":159,"c":1,"x":4895,"y":392,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":1,"desc":"Drifted snow across the road","id":"R-0134"},{"t":159,"c":2,"x":4183,"y":437,"w":3,"r":"Township Road 230","ch":"Email","ack":1,"cl":3,"desc":"Culvert end crushed or washed out","id":"R-0135"},{"t":159,"c":5,"x":4058,"y":939,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":1,"desc":"Dead tree leaning over road","id":"R-0136"},{"t":160,"c":0,"x":3520,"y":2896,"w":1,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":24,"desc":"Road edge breaking up","id":"R-0137"},{"t":163,"c":0,"x":2042,"y":1971,"w":2,"r":"Main Street","ch":"Mobile app","ack":4,"cl":11,"desc":"Pothole in the travelled lane","id":"R-0138"},{"t":163,"c":0,"x":3034,"y":1991,"w":3,"r":"Main Street","ch":"Web form","ack":1,"cl":9,"desc":"Patch has failed, loose gravel on the road","id":"R-0139"},{"t":163,"c":2,"x":2813,"y":2284,"w":1,"r":"Centre Avenue","ch":"Phone","ack":2,"cl":7,"desc":"Culvert blocked by debris","id":"R-0140"},{"t":164,"c":3,"x":3716,"y":2277,"w":1,"r":"6th Street","ch":"Phone","ack":1,"cl":15,"desc":"Streetlight out","id":"R-0141"},{"t":167,"c":2,"x":2466,"y":3594,"w":0,"r":"Township Road 240","ch":"Phone","ack":0,"cl":3,"desc":"Water pooling on the road","id":"R-0142"},{"t":168,"c":0,"x":3094,"y":1963,"w":3,"r":"4th Street","ch":"Web form","ack":2,"cl":6,"desc":"Road edge breaking up","id":"R-0143"},{"t":168,"c":0,"x":3291,"y":1975,"w":3,"r":"Main Street","ch":"Web form","ack":1,"cl":8,"desc":"Deep pothole near the intersection","id":"R-0144"},{"t":168,"c":2,"x":4930,"y":379,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":3,"desc":"Culvert end crushed or washed out","id":"R-0145"},{"t":169,"c":5,"x":889,"y":1772,"w":2,"r":"Range Road 20","ch":"Phone","ack":1,"cl":5,"desc":"Overhanging branches near sign","id":"R-0146"},{"t":169,"c":6,"x":2006,"y":2354,"w":0,"r":"1st Street","ch":"Mobile app","ack":1,"cl":7,"desc":"Stop sign bent or faded","id":"R-0147"},{"t":171,"c":0,"x":4100,"y":1944,"w":3,"r":"Ring Road","ch":"Phone","ack":2,"cl":4,"desc":"Pothole in the travelled lane","id":"R-0148"},{"t":171,"c":2,"x":5217,"y":745,"w":3,"r":"Range Road 30","ch":"Web form","ack":2,"cl":2,"desc":"Culvert end crushed or washed out","id":"R-0149"},{"t":174,"c":0,"x":2151,"y":2605,"w":0,"r":"Maple Lane","ch":"Mobile app","ack":1,"cl":48,"desc":"Patch has failed, loose gravel on the road","id":"R-0150"},{"t":174,"c":0,"x":2810,"y":3672,"w":1,"r":"Centre Avenue","ch":"Web form","ack":1,"cl":25,"desc":"Deep pothole near the intersection","id":"R-0151"},{"t":174,"c":2,"x":913,"y":905,"w":2,"r":"Range Road 20","ch":"Mobile app","ack":2,"cl":4,"desc":"Ditch not draining","id":"R-0152"},{"t":175,"c":6,"x":3392,"y":2288,"w":1,"r":"5th Street","ch":"Web form","ack":1,"cl":23,"desc":"Street name sign down","id":"R-0153"},{"t":176,"c":0,"x":1986,"y":1088,"w":2,"r":"Ring Road","ch":"Email","ack":2,"cl":7,"desc":"Pothole in the travelled lane","id":"R-0154"},{"t":176,"c":2,"x":4000,"y":1021,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":6,"desc":"Culvert end crushed or washed out","id":"R-0155"},{"t":177,"c":2,"x":908,"y":886,"w":2,"r":"Range Road 20","ch":"Email","ack":1,"cl":2,"desc":"Culvert end crushed or washed out","id":"R-0156"},{"t":178,"c":0,"x":2279,"y":2901,"w":0,"r":"Ring Road","ch":"Phone","ack":1,"cl":12,"desc":"Road edge breaking up","id":"R-0157"},{"t":178,"c":4,"x":875,"y":2553,"w":0,"r":"Range Road 20","ch":"Phone","ack":1,"cl":10,"desc":"Household waste dumped at pull-off","id":"R-0158"},{"t":179,"c":2,"x":5729,"y":3592,"w":1,"r":"Township Road 240","ch":"Web form","ack":1,"cl":9,"desc":"Ditch not draining","id":"R-0159"},{"t":184,"c":0,"x":1998,"y":1996,"w":2,"r":"1st Street","ch":"Mobile app","ack":1,"cl":12,"desc":"Deep pothole near the intersection","id":"R-0160"},{"t":184,"c":0,"x":3075,"y":1972,"w":3,"r":"Main Street","ch":"Phone","ack":1,"cl":126,"desc":"Pothole in the travelled lane","id":"R-0161"},{"t":184,"c":2,"x":2490,"y":3591,"w":0,"r":"Township Road 240","ch":"Phone","ack":1,"cl":6,"desc":"Culvert end crushed or washed out","id":"R-0162"},{"t":186,"c":0,"x":2859,"y":1975,"w":3,"r":"Main Street","ch":"Email","ack":1,"cl":24,"desc":"Road edge breaking up","id":"R-0163"},{"t":187,"c":0,"x":2810,"y":1979,"w":3,"r":"Main Street","ch":"Web form","ack":2,"cl":13,"desc":"Road edge breaking up","id":"R-0164"},{"t":187,"c":0,"x":4183,"y":2826,"w":1,"r":"Ring Road","ch":"Web form","ack":1,"cl":15,"desc":"Road edge breaking up","id":"R-0165"},{"t":188,"c":0,"x":5321,"y":464,"w":3,"r":"Township Road 230","ch":"Phone","ack":1,"cl":11,"desc":"Pothole in the travelled lane","id":"R-0166"},{"t":189,"c":0,"x":1641,"y":1444,"w":2,"r":"Ring Road","ch":"Phone","ack":1,"cl":9,"desc":"Pothole in the travelled lane","id":"R-0167"},{"t":189,"c":2,"x":1050,"y":433,"w":2,"r":"Township Road 230","ch":"Mobile app","ack":1,"cl":2,"desc":"Water pooling on the road","id":"R-0168"},{"t":189,"c":4,"x":902,"y":3753,"w":0,"r":"Range Road 20","ch":"Mobile app","ack":1,"cl":13,"desc":"Construction debris dumped","id":"R-0169"},{"t":189,"c":5,"x":913,"y":973,"w":2,"r":"Range Road 20","ch":"Web form","ack":6,"cl":6,"desc":"Fallen tree partly blocking road","id":"R-0170"},{"t":190,"c":0,"x":2296,"y":2490,"w":0,"r":"2nd Street","ch":"Web form","ack":1,"cl":16,"desc":"Road edge breaking up","id":"R-0171"},{"t":190,"c":4,"x":5599,"y":3586,"w":1,"r":"Township Road 240","ch":"Phone","ack":1,"cl":21,"desc":"Construction debris dumped","id":"R-0172"},{"t":192,"c":0,"x":2859,"y":1967,"w":3,"r":"Main Street","ch":"Web form","ack":3,"cl":10,"desc":"Pothole in the travelled lane","id":"R-0173"},{"t":193,"c":0,"x":3787,"y":2899,"w":1,"r":"Ring Road","ch":"Web form","ack":1,"cl":36,"desc":"Deep pothole near the intersection","id":"R-0174"},{"t":197,"c":0,"x":4885,"y":2081,"w":1,"r":"Main Street","ch":"Phone","ack":1,"cl":19,"desc":"Patch has failed, loose gravel on the road","id":"R-0175"},{"t":197,"c":2,"x":1656,"y":1671,"w":2,"r":"Ring Road","ch":"Web form","ack":1,"cl":5,"desc":"Water pooling on the road","id":"R-0176"},{"t":198,"c":2,"x":2342,"y":3611,"w":0,"r":"Township Road 240","ch":"Phone","ack":1,"cl":4,"desc":"Culvert end crushed or washed out","id":"R-0177"},{"t":198,"c":5,"x":2599,"y":1322,"w":2,"r":"3rd Street","ch":"Phone","ack":1,"cl":3,"desc":"Brush blocking sightline","id":"R-0178"},{"t":201,"c":0,"x":2806,"y":692,"w":3,"r":"Centre Avenue","ch":"Mobile app","ack":1,"cl":11,"desc":"Deep pothole near the intersection","id":"R-0179"},{"t":202,"c":0,"x":2803,"y":3974,"w":1,"r":"Centre Avenue","ch":"Email","ack":2,"cl":8,"desc":"Deep pothole near the intersection","id":"R-0180"},{"t":202,"c":4,"x":4297,"y":701,"w":3,"r":"Creek Road","ch":"Mobile app","ack":1,"cl":11,"desc":"Furniture left beside road","id":"R-0181"},{"t":203,"c":4,"x":885,"y":2911,"w":0,"r":"Range Road 20","ch":"Phone","ack":1,"cl":10,"desc":"Construction debris dumped","id":"R-0182"},{"t":204,"c":0,"x":2832,"y":2797,"w":1,"r":"Centre Avenue","ch":"Web form","ack":7,"cl":19,"desc":"Road edge breaking up","id":"R-0183"},{"t":204,"c":2,"x":867,"y":902,"w":2,"r":"Range Road 20","ch":"Web form","ack":2,"cl":5,"desc":"Culvert end crushed or washed out","id":"R-0184"},{"t":205,"c":2,"x":4168,"y":2566,"w":1,"r":"Ring Road","ch":"Phone","ack":1,"cl":6,"desc":"Ditch not draining","id":"R-0185"},{"t":206,"c":0,"x":3400,"y":1986,"w":3,"r":"5th Street","ch":"Web form","ack":1,"cl":11,"desc":"Deep pothole near the intersection","id":"R-0186"},{"t":206,"c":2,"x":2474,"y":3549,"w":0,"r":"Township Road 240","ch":"Web form","ack":0,"cl":2,"desc":"Culvert blocked by debris","id":"R-0187"},{"t":206,"c":4,"x":887,"y":1808,"w":2,"r":"Range Road 20","ch":"Web form","ack":2,"cl":11,"desc":"Household waste dumped at pull-off","id":"R-0188"},{"t":207,"c":5,"x":2839,"y":3212,"w":1,"r":"Centre Avenue","ch":"Mobile app","ack":1,"cl":4,"desc":"Dead tree leaning over road","id":"R-0189"},{"t":207,"c":6,"x":2335,"y":1099,"w":2,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":6,"desc":"Speed sign missing","id":"R-0190"},{"t":208,"c":2,"x":5223,"y":728,"w":3,"r":"Range Road 30","ch":"Web form","ack":2,"cl":6,"desc":"Water pooling on the road","id":"R-0191"},{"t":209,"c":0,"x":3287,"y":1994,"w":3,"r":"Main Street","ch":"Phone","ack":3,"cl":16,"desc":"Deep pothole near the intersection","id":"R-0192"},{"t":209,"c":0,"x":3430,"y":2593,"w":1,"r":"Maple Lane","ch":"Mobile app","ack":2,"cl":16,"desc":"Patch has failed, loose gravel on the road","id":"R-0193"},{"t":213,"c":0,"x":2580,"y":1975,"w":2,"r":"Main Street","ch":"Phone","ack":1,"cl":18,"desc":"Deep pothole near the intersection","id":"R-0194"},{"t":215,"c":5,"x":5184,"y":1437,"w":3,"r":"Range Road 30","ch":"Mobile app","ack":1,"cl":1,"desc":"Brush blocking sightline","id":"R-0195"},{"t":216,"c":2,"x":5147,"y":737,"w":3,"r":"Range Road 30","ch":"Web form","ack":1,"cl":2,"desc":"Culvert blocked by debris","id":"R-0196"},{"t":217,"c":4,"x":5180,"y":1428,"w":3,"r":"Range Road 30","ch":"Email","ack":1,"cl":10,"desc":"Household waste dumped at pull-off","id":"R-0197"},{"t":218,"c":5,"x":1658,"y":1632,"w":2,"r":"Ring Road","ch":"Web form","ack":1,"cl":3,"desc":"Brush blocking sightline","id":"R-0198"},{"t":219,"c":6,"x":2812,"y":342,"w":3,"r":"Centre Avenue","ch":"Mobile app","ack":3,"cl":7,"desc":"Street name sign down","id":"R-0199"},{"t":220,"c":5,"x":2845,"y":2716,"w":1,"r":"Centre Avenue","ch":"Web form","ack":2,"cl":4,"desc":"Fallen tree partly blocking road","id":"R-0200"},{"t":221,"c":0,"x":2828,"y":2603,"w":1,"r":"Centre Avenue","ch":"Phone","ack":1,"cl":16,"desc":"Pothole in the travelled lane","id":"R-0201"},{"t":221,"c":2,"x":2452,"y":3609,"w":0,"r":"Township Road 240","ch":"Web form","ack":1,"cl":2,"desc":"Culvert blocked by debris","id":"R-0202"},{"t":222,"c":5,"x":5196,"y":595,"w":3,"r":"Range Road 30","ch":"Email","ack":1,"cl":6,"desc":"Brush blocking sightline","id":"R-0203"},{"t":223,"c":3,"x":3097,"y":2160,"w":1,"r":"4th Street","ch":"Web form","ack":1,"cl":23,"desc":"Streetlight out","id":"R-0204"},{"t":225,"c":4,"x":912,"y":365,"w":2,"r":"Range Road 20","ch":"Web form","ack":1,"cl":29,"desc":"Furniture left beside road","id":"R-0205"},{"t":225,"c":4,"x":3999,"y":1002,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":25,"desc":"Tires dumped in ditch","id":"R-0206"},{"t":225,"c":4,"x":4631,"y":3606,"w":1,"r":"Township Road 240","ch":"Email","ack":2,"cl":16,"desc":"Tires dumped in ditch","id":"R-0207"},{"t":226,"c":0,"x":3924,"y":1099,"w":3,"r":"Ring Road","ch":"Web form","ack":1,"cl":19,"desc":"Pothole in the travelled lane","id":"R-0208"},{"t":226,"c":6,"x":4153,"y":2574,"w":1,"r":"Ring Road","ch":"Web form","ack":1,"cl":11,"desc":"Stop sign bent or faded","id":"R-0209"},{"t":227,"c":2,"x":5200,"y":85,"w":3,"r":"Range Road 30","ch":"Mobile app","ack":1,"cl":3,"desc":"Culvert blocked by debris","id":"R-0210"},{"t":228,"c":0,"x":3692,"y":2363,"w":1,"r":"6th Street","ch":"Email","ack":1,"cl":24,"desc":"Road edge breaking up","id":"R-0211"},{"t":229,"c":2,"x":831,"y":869,"w":2,"r":"Range Road 20","ch":"Phone","ack":1,"cl":7,"desc":"Ditch not draining","id":"R-0212"},{"t":229,"c":2,"x":4090,"y":907,"w":3,"r":"Creek Road","ch":"Web form","ack":2,"cl":2,"desc":"Ditch not draining","id":"R-0213"},{"t":230,"c":5,"x":2601,"y":1617,"w":2,"r":"3rd Street","ch":"Phone","ack":1,"cl":5,"desc":"Fallen tree partly blocking road","id":"R-0214"},{"t":231,"c":0,"x":2573,"y":1965,"w":2,"r":"Main Street","ch":"Web form","ack":1,"cl":12,"desc":"Road edge breaking up","id":"R-0215"},{"t":231,"c":4,"x":886,"y":1898,"w":2,"r":"Range Road 20","ch":"Web form","ack":1,"cl":12,"desc":"Furniture left beside road","id":"R-0216"},{"t":231,"c":6,"x":4184,"y":3598,"w":1,"r":"Township Road 240","ch":"Web form","ack":1,"cl":4,"desc":"Street name sign down","id":"R-0217"},{"t":232,"c":0,"x":556,"y":2005,"w":0,"r":"Main Street","ch":"Mobile app","ack":1,"cl":null,"desc":"Road edge breaking up","id":"R-0218"},{"t":232,"c":2,"x":1812,"y":2907,"w":0,"r":"Ring Road","ch":"Mobile app","ack":0,"cl":5,"desc":"Water pooling on the road","id":"R-0219"},{"t":232,"c":2,"x":5230,"y":696,"w":3,"r":"Range Road 30","ch":"Phone","ack":1,"cl":3,"desc":"Culvert end crushed or washed out","id":"R-0220"},{"t":234,"c":2,"x":2714,"y":3623,"w":0,"r":"Township Road 240","ch":"Web form","ack":1,"cl":4,"desc":"Ditch not draining","id":"R-0221"},{"t":234,"c":2,"x":5181,"y":1493,"w":3,"r":"Range Road 30","ch":"Mobile app","ack":1,"cl":3,"desc":"Ditch not draining","id":"R-0222"},{"t":234,"c":2,"x":5196,"y":865,"w":3,"r":"Range Road 30","ch":"Mobile app","ack":2,"cl":33,"desc":"Culvert blocked by debris","id":"R-0223"},{"t":235,"c":2,"x":896,"y":885,"w":2,"r":"Range Road 20","ch":"Mobile app","ack":2,"cl":4,"desc":"Ditch not draining","id":"R-0224"},{"t":235,"c":2,"x":902,"y":434,"w":2,"r":"Range Road 20","ch":"Phone","ack":1,"cl":2,"desc":"Ditch not draining","id":"R-0225"},{"t":235,"c":2,"x":1235,"y":434,"w":2,"r":"Township Road 230","ch":"Phone","ack":1,"cl":2,"desc":"Culvert blocked by debris","id":"R-0226"},{"t":236,"c":4,"x":3233,"y":3619,"w":1,"r":"Township Road 240","ch":"Web form","ack":1,"cl":17,"desc":"Tires dumped in ditch","id":"R-0227"},{"t":239,"c":0,"x":2806,"y":145,"w":3,"r":"Centre Avenue","ch":"Mobile app","ack":1,"cl":null,"desc":"Deep pothole near the intersection","id":"R-0228"},{"t":239,"c":2,"x":2894,"y":430,"w":3,"r":"Township Road 230","ch":"Web form","ack":2,"cl":3,"desc":"Water pooling on the road","id":"R-0229"},{"t":239,"c":2,"x":4504,"y":576,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":4,"desc":"Ditch not draining","id":"R-0230"},{"t":239,"c":3,"x":2249,"y":1397,"w":2,"r":"Oak Lane","ch":"Phone","ack":0,"cl":10,"desc":"Light flickering","id":"R-0231"},{"t":240,"c":4,"x":4309,"y":685,"w":3,"r":"Creek Road","ch":"Mobile app","ack":1,"cl":9,"desc":"Construction debris dumped","id":"R-0232"},{"t":241,"c":4,"x":4365,"y":727,"w":3,"r":"Creek Road","ch":"Web form","ack":1,"cl":6,"desc":"Furniture left beside road","id":"R-0233"},{"t":241,"c":5,"x":2820,"y":1366,"w":3,"r":"Centre Avenue","ch":"Mobile app","ack":0,"cl":3,"desc":"Fallen tree partly blocking road","id":"R-0234"},{"t":243,"c":4,"x":5116,"y":325,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":7,"desc":"Furniture left beside road","id":"R-0235"},{"t":244,"c":0,"x":4027,"y":1302,"w":3,"r":"Ring Road","ch":"Phone","ack":1,"cl":6,"desc":"Patch has failed, loose gravel on the road","id":"R-0236"},{"t":244,"c":2,"x":857,"y":871,"w":2,"r":"Range Road 20","ch":"Web form","ack":null,"cl":null,"desc":"Culvert end crushed or washed out","id":"R-0237"},{"t":245,"c":4,"x":886,"y":3658,"w":0,"r":"Range Road 20","ch":"Web form","ack":8,"cl":8,"desc":"Construction debris dumped","id":"R-0238"},{"t":247,"c":4,"x":894,"y":2993,"w":0,"r":"Range Road 20","ch":"Email","ack":2,"cl":10,"desc":"Construction debris dumped","id":"R-0239"},{"t":247,"c":5,"x":1806,"y":2860,"w":0,"r":"Ring Road","ch":"Web form","ack":2,"cl":3,"desc":"Brush blocking sightline","id":"R-0240"},{"t":247,"c":5,"x":4065,"y":441,"w":3,"r":"Township Road 230","ch":"Mobile app","ack":1,"cl":2,"desc":"Brush blocking sightline","id":"R-0241"},{"t":248,"c":0,"x":4032,"y":1429,"w":3,"r":"Ring Road","ch":"Phone","ack":0,"cl":50,"desc":"Road edge breaking up","id":"R-0242"},{"t":251,"c":2,"x":4093,"y":919,"w":3,"r":"Creek Road","ch":"Mobile app","ack":0,"cl":2,"desc":"Water pooling on the road","id":"R-0243"},{"t":254,"c":5,"x":2815,"y":326,"w":3,"r":"Centre Avenue","ch":"Phone","ack":1,"cl":7,"desc":"Dead tree leaning over road","id":"R-0244"},{"t":256,"c":5,"x":881,"y":2709,"w":0,"r":"Range Road 20","ch":"Web form","ack":1,"cl":11,"desc":"Overhanging branches near sign","id":"R-0245"},{"t":257,"c":4,"x":4278,"y":737,"w":3,"r":"Creek Road","ch":"Email","ack":1,"cl":10,"desc":"Furniture left beside road","id":"R-0246"},{"t":258,"c":2,"x":5063,"y":3603,"w":1,"r":"Township Road 240","ch":"Email","ack":0,"cl":1,"desc":"Ditch not draining","id":"R-0247"},{"t":260,"c":5,"x":1707,"y":2008,"w":0,"r":"Main Street","ch":"Web form","ack":0,"cl":null,"desc":"Overhanging branches near sign","id":"R-0248"},{"t":260,"c":5,"x":4732,"y":433,"w":3,"r":"Creek Road","ch":"Email","ack":1,"cl":2,"desc":"Dead tree leaning over road","id":"R-0249"},{"t":263,"c":5,"x":229,"y":446,"w":2,"r":"Township Road 230","ch":"Mobile app","ack":0,"cl":7,"desc":"Brush blocking sightline","id":"R-0250"},{"t":264,"c":4,"x":5185,"y":1823,"w":3,"r":"Range Road 30","ch":"Email","ack":3,"cl":13,"desc":"Tires dumped in ditch","id":"R-0251"},{"t":265,"c":5,"x":3971,"y":2888,"w":1,"r":"Ring Road","ch":"Web form","ack":1,"cl":6,"desc":"Brush blocking sightline","id":"R-0252"},{"t":266,"c":5,"x":5186,"y":3416,"w":1,"r":"Range Road 30","ch":"Email","ack":1,"cl":19,"desc":"Dead tree leaning over road","id":"R-0253"},{"t":270,"c":2,"x":2476,"y":3610,"w":0,"r":"Township Road 240","ch":"Web form","ack":2,"cl":4,"desc":"Water pooling on the road","id":"R-0254"},{"t":271,"c":4,"x":2509,"y":3615,"w":0,"r":"Township Road 240","ch":"Phone","ack":1,"cl":10,"desc":"Tires dumped in ditch","id":"R-0255"},{"t":271,"c":5,"x":3100,"y":2646,"w":1,"r":"4th Street","ch":"Mobile app","ack":1,"cl":null,"desc":"Fallen tree partly blocking road","id":"R-0256"},{"t":272,"c":0,"x":2814,"y":2434,"w":1,"r":"Centre Avenue","ch":"Email","ack":1,"cl":5,"desc":"Road edge breaking up","id":"R-0257"},{"t":274,"c":0,"x":5201,"y":2074,"w":1,"r":"Main Street","ch":"Phone","ack":1,"cl":4,"desc":"Deep pothole near the intersection","id":"R-0258"},{"t":275,"c":0,"x":1618,"y":1189,"w":2,"r":"Ring Road","ch":"Phone","ack":null,"cl":null,"desc":"Road edge breaking up","id":"R-0259"},{"t":276,"c":0,"x":1098,"y":2053,"w":0,"r":"Main Street","ch":"Email","ack":1,"cl":13,"desc":"Deep pothole near the intersection","id":"R-0260"},{"t":278,"c":3,"x":1978,"y":1394,"w":2,"r":"Oak Lane","ch":"Phone","ack":1,"cl":18,"desc":"Streetlight out","id":"R-0261"},{"t":278,"c":4,"x":896,"y":207,"w":2,"r":"Range Road 20","ch":"Phone","ack":1,"cl":55,"desc":"Tires dumped in ditch","id":"R-0262"},{"t":278,"c":4,"x":2610,"y":3609,"w":0,"r":"Township Road 240","ch":"Phone","ack":1,"cl":5,"desc":"Household waste dumped at pull-off","id":"R-0263"},{"t":279,"c":4,"x":5199,"y":2860,"w":1,"r":"Range Road 30","ch":"Web form","ack":3,"cl":null,"desc":"Tires dumped in ditch","id":"R-0264"},{"t":281,"c":5,"x":5148,"y":309,"w":3,"r":"Creek Road","ch":"Web form","ack":0,"cl":5,"desc":"Fallen tree partly blocking road","id":"R-0265"},{"t":283,"c":5,"x":2822,"y":3512,"w":1,"r":"Centre Avenue","ch":"Web form","ack":2,"cl":3,"desc":"Brush blocking sightline","id":"R-0266"},{"t":285,"c":6,"x":4572,"y":2093,"w":1,"r":"Main Street","ch":"Web form","ack":1,"cl":6,"desc":"Stop sign bent or faded","id":"R-0267"},{"t":288,"c":2,"x":2441,"y":3592,"w":0,"r":"Township Road 240","ch":"Mobile app","ack":1,"cl":1,"desc":"Culvert blocked by debris","id":"R-0268"},{"t":289,"c":3,"x":3094,"y":2366,"w":1,"r":"4th Street","ch":"Web form","ack":0,"cl":8,"desc":"Whole block dark","id":"R-0269"},{"t":290,"c":6,"x":2728,"y":1699,"w":2,"r":"Elm Lane","ch":"Mobile app","ack":1,"cl":8,"desc":"Stop sign bent or faded","id":"R-0270"},{"t":292,"c":4,"x":4284,"y":697,"w":3,"r":"Creek Road","ch":"Mobile app","ack":1,"cl":17,"desc":"Construction debris dumped","id":"R-0271"},{"t":294,"c":4,"x":2290,"y":3603,"w":0,"r":"Township Road 240","ch":"Mobile app","ack":2,"cl":9,"desc":"Furniture left beside road","id":"R-0272"},{"t":297,"c":5,"x":2831,"y":1409,"w":3,"r":"Oak Lane","ch":"Phone","ack":1,"cl":7,"desc":"Dead tree leaning over road","id":"R-0273"},{"t":298,"c":5,"x":2823,"y":980,"w":3,"r":"Centre Avenue","ch":"Email","ack":1,"cl":2,"desc":"Brush blocking sightline","id":"R-0274"},{"t":299,"c":2,"x":4684,"y":446,"w":3,"r":"Township Road 230","ch":"Phone","ack":0,"cl":null,"desc":"Ditch not draining","id":"R-0275"},{"t":300,"c":5,"x":4173,"y":833,"w":3,"r":"Creek Road","ch":"Web form","ack":2,"cl":7,"desc":"Dead tree leaning over road","id":"R-0276"},{"t":300,"c":6,"x":2633,"y":2297,"w":0,"r":"Birch Lane","ch":"Email","ack":2,"cl":4,"desc":"Street name sign down","id":"R-0277"},{"t":302,"c":4,"x":4541,"y":446,"w":3,"r":"Township Road 230","ch":"Phone","ack":2,"cl":11,"desc":"Construction debris dumped","id":"R-0278"},{"t":302,"c":5,"x":895,"y":3126,"w":0,"r":"Range Road 20","ch":"Web form","ack":1,"cl":2,"desc":"Overhanging branches near sign","id":"R-0279"},{"t":302,"c":5,"x":3550,"y":433,"w":3,"r":"Township Road 230","ch":"Phone","ack":1,"cl":22,"desc":"Fallen tree partly blocking road","id":"R-0280"},{"t":302,"c":5,"x":3907,"y":1093,"w":3,"r":"Creek Road","ch":"Phone","ack":1,"cl":1,"desc":"Dead tree leaning over road","id":"R-0281"},{"t":303,"c":4,"x":4908,"y":466,"w":3,"r":"Township Road 230","ch":"Web form","ack":3,"cl":13,"desc":"Household waste dumped at pull-off","id":"R-0282"},{"t":305,"c":0,"x":2608,"y":2637,"w":0,"r":"3rd Street","ch":"Web form","ack":1,"cl":6,"desc":"Road edge breaking up","id":"R-0283"},{"t":307,"c":5,"x":3403,"y":1823,"w":3,"r":"5th Street","ch":"Phone","ack":1,"cl":3,"desc":"Overhanging branches near sign","id":"R-0284"},{"t":310,"c":3,"x":3811,"y":2893,"w":1,"r":"Ring Road","ch":"Phone","ack":2,"cl":null,"desc":"Whole block dark","id":"R-0285"},{"t":310,"c":4,"x":885,"y":3229,"w":0,"r":"Range Road 20","ch":"Web form","ack":2,"cl":9,"desc":"Tires dumped in ditch","id":"R-0286"},{"t":314,"c":6,"x":2474,"y":1106,"w":2,"r":"Ring Road","ch":"Phone","ack":2,"cl":8,"desc":"Crosswalk sign damaged","id":"R-0287"},{"t":315,"c":0,"x":2436,"y":1979,"w":2,"r":"Main Street","ch":"Mobile app","ack":3,"cl":3,"desc":"Pothole in the travelled lane","id":"R-0288"},{"t":316,"c":0,"x":2610,"y":1987,"w":2,"r":"3rd Street","ch":"Phone","ack":1,"cl":8,"desc":"Patch has failed, loose gravel on the road","id":"R-0289"},{"t":319,"c":0,"x":2814,"y":1162,"w":3,"r":"Centre Avenue","ch":"Web form","ack":1,"cl":5,"desc":"Road edge breaking up","id":"R-0290"},{"t":320,"c":6,"x":886,"y":2868,"w":0,"r":"Range Road 20","ch":"Mobile app","ack":4,"cl":11,"desc":"Crosswalk sign damaged","id":"R-0291"},{"t":322,"c":6,"x":2462,"y":1105,"w":2,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":5,"desc":"Speed sign missing","id":"R-0292"},{"t":323,"c":6,"x":2302,"y":2033,"w":0,"r":"2nd Street","ch":"Mobile app","ack":1,"cl":3,"desc":"Street name sign down","id":"R-0293"},{"t":324,"c":3,"x":2269,"y":1102,"w":2,"r":"Ring Road","ch":"Mobile app","ack":1,"cl":34,"desc":"Pole leaning and light off","id":"R-0294"},{"t":326,"c":3,"x":2449,"y":2600,"w":0,"r":"Maple Lane","ch":"Web form","ack":3,"cl":null,"desc":"Pole leaning and light off","id":"R-0295"},{"t":326,"c":5,"x":3734,"y":1695,"w":3,"r":"Elm Lane","ch":"Phone","ack":1,"cl":null,"desc":"Dead tree leaning over road","id":"R-0296"},{"t":328,"c":0,"x":3062,"y":1977,"w":3,"r":"Main Street","ch":"Web form","ack":2,"cl":6,"desc":"Road edge breaking up","id":"R-0297"},{"t":328,"c":6,"x":2959,"y":2294,"w":1,"r":"Birch Lane","ch":"Email","ack":1,"cl":33,"desc":"Crosswalk sign damaged","id":"R-0298"},{"t":329,"c":0,"x":4094,"y":1977,"w":3,"r":"Ring Road","ch":"Web form","ack":2,"cl":13,"desc":"Deep pothole near the intersection","id":"R-0299"},{"t":329,"c":4,"x":2314,"y":3611,"w":0,"r":"Township Road 240","ch":"Web form","ack":0,"cl":11,"desc":"Furniture left beside road","id":"R-0300"},{"t":329,"c":4,"x":5195,"y":2322,"w":1,"r":"Range Road 30","ch":"Mobile app","ack":1,"cl":10,"desc":"Construction debris dumped","id":"R-0301"},{"t":331,"c":6,"x":1833,"y":1697,"w":2,"r":"Elm Lane","ch":"Phone","ack":5,"cl":10,"desc":"Speed sign missing","id":"R-0302"},{"t":332,"c":2,"x":924,"y":834,"w":2,"r":"Range Road 20","ch":"Web form","ack":1,"cl":3,"desc":"Water pooling on the road","id":"R-0303"},{"t":332,"c":5,"x":1598,"y":2021,"w":0,"r":"Main Street","ch":"Phone","ack":2,"cl":2,"desc":"Brush blocking sightline","id":"R-0304"},{"t":332,"c":6,"x":3253,"y":2009,"w":1,"r":"Main Street","ch":"Web form","ack":0,"cl":8,"desc":"Stop sign bent or faded","id":"R-0305"},{"t":341,"c":2,"x":5170,"y":743,"w":3,"r":"Range Road 30","ch":"Web form","ack":1,"cl":5,"desc":"Ditch not draining","id":"R-0306"},{"t":342,"c":5,"x":4614,"y":449,"w":3,"r":"Township Road 230","ch":"Phone","ack":2,"cl":19,"desc":"Fallen tree partly blocking road","id":"R-0307"},{"t":346,"c":2,"x":2295,"y":439,"w":2,"r":"Township Road 230","ch":"Mobile app","ack":null,"cl":null,"desc":"Water pooling on the road","id":"R-0308"},{"t":346,"c":4,"x":4313,"y":687,"w":3,"r":"Creek Road","ch":"Web form","ack":2,"cl":15,"desc":"Construction debris dumped","id":"R-0309"},{"t":347,"c":1,"x":2813,"y":1005,"w":3,"r":"Centre Avenue","ch":"Web form","ack":0,"cl":1,"desc":"Drifted snow across the road","id":"R-0310"},{"t":347,"c":3,"x":2002,"y":1476,"w":2,"r":"1st Street","ch":"Web form","ack":3,"cl":null,"desc":"Whole block dark","id":"R-0311"},{"t":347,"c":5,"x":3498,"y":1702,"w":3,"r":"Elm Lane","ch":"Phone","ack":1,"cl":5,"desc":"Overhanging branches near sign","id":"R-0312"},{"t":349,"c":0,"x":3112,"y":1993,"w":3,"r":"Main Street","ch":"Mobile app","ack":1,"cl":1,"desc":"Patch has failed, loose gravel on the road","id":"R-0313"},{"t":349,"c":6,"x":2003,"y":1673,"w":2,"r":"1st Street","ch":"Web form","ack":0,"cl":9,"desc":"Speed sign missing","id":"R-0314"},{"t":353,"c":0,"x":4892,"y":2086,"w":1,"r":"Main Street","ch":"Phone","ack":1,"cl":8,"desc":"Patch has failed, loose gravel on the road","id":"R-0315"},{"t":354,"c":2,"x":2813,"y":423,"w":3,"r":"Centre Avenue","ch":"Phone","ack":0,"cl":null,"desc":"Water pooling on the road","id":"R-0316"},{"t":355,"c":0,"x":2868,"y":1980,"w":3,"r":"Main Street","ch":"Web form","ack":2,"cl":5,"desc":"Road edge breaking up","id":"R-0317"},{"t":355,"c":3,"x":2602,"y":2222,"w":0,"r":"3rd Street","ch":"Phone","ack":1,"cl":null,"desc":"Whole block dark","id":"R-0318"},{"t":355,"c":3,"x":3550,"y":1105,"w":3,"r":"Ring Road","ch":"Web form","ack":1,"cl":8,"desc":"Whole block dark","id":"R-0319"},{"t":356,"c":4,"x":4331,"y":680,"w":3,"r":"Creek Road","ch":"Mobile app","ack":1,"cl":8,"desc":"Household waste dumped at pull-off","id":"R-0320"},{"t":358,"c":0,"x":2839,"y":2789,"w":1,"r":"Centre Avenue","ch":"Email","ack":0,"cl":null,"desc":"Patch has failed, loose gravel on the road","id":"R-0321"},{"t":358,"c":4,"x":2694,"y":3628,"w":0,"r":"Township Road 240","ch":"Phone","ack":1,"cl":null,"desc":"Tires dumped in ditch","id":"R-0322"},{"t":358,"c":6,"x":2817,"y":998,"w":3,"r":"Centre Avenue","ch":"Web form","ack":2,"cl":null,"desc":"Speed sign missing","id":"R-0323"},{"t":360,"c":3,"x":1906,"y":1993,"w":2,"r":"Main Street","ch":"Phone","ack":1,"cl":2,"desc":"Whole block dark","id":"R-0324"},{"t":362,"c":3,"x":3241,"y":1694,"w":3,"r":"Elm Lane","ch":"Web form","ack":1,"cl":null,"desc":"Pole leaning and light off","id":"R-0325"}]};
+if(!D){return;}
+var FONT='system-ui,-apple-system,"Segoe UI",sans-serif';
+var $=function(id){return document.getElementById(id);};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var fmt=function(n,d){d=d||0;return Number(n).toLocaleString("en-CA",{minimumFractionDigits:d,maximumFractionDigits:d});};
+var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+var R=D.reports, ASOF=D.asof, NC=D.cats.length, BIN=300, REP=5;
+var START=new Date(D.start+"T12:00:00");
+var STAT=["New","In progress","Closed"];
+var state={period:365,ward:-1,cats:D.cats.map(function(){return true;}),mode:"reports",sel:null,selBin:null,pick:false,pt:null,demo:0};
+
+/* ---------- helpers ---------- */
+function dateOf(t){return new Date(START.getTime()+t*864e5);}
+function dlabel(t){return dateOf(t).toLocaleDateString("en-CA",{month:"short",day:"numeric",year:"numeric"});}
+function stat(r){return r.cl!=null?2:(r.ack!=null&&r.t+r.ack<=ASOF?1:0);}
+function target(r){return D.cats[r.c].target;}
+function age(r){return ASOF-r.t;}
+function overdue(r){return stat(r)<2&&age(r)>target(r);}
+function median(a){if(!a.length)return null;a=a.slice().sort(function(x,y){return x-y;});var m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2;}
+function wardOf(x,y){return x<2800?(y>=2000?0:2):(y>=2000?1:3);}
+function segDist(px,py,a,b){var vx=b[0]-a[0],vy=b[1]-a[1],t=Math.max(0,Math.min(1,((px-a[0])*vx+(py-a[1])*vy)/(vx*vx+vy*vy)));return Math.hypot(px-(a[0]+t*vx),py-(a[1]+t*vy));}
+function nearestRoad(x,y){var best=1e18,nm="";D.roads.forEach(function(rd){for(var i=0;i<rd.pts.length-1;i++){var d=segDist(x,y,rd.pts[i],rd.pts[i+1]);if(d<best){best=d;nm=rd.name;}}});return nm;}
+function inWard(r){return state.ward<0||r.w===state.ward;}
+function inPeriod(r){return r.t>=ASOF-state.period+1;}
+function base(){return R.filter(function(r){return inWard(r)&&state.cats[r.c]&&inPeriod(r);});}
+function openAll(){return R.filter(function(r){return inWard(r)&&state.cats[r.c]&&stat(r)<2;});}
+function bins(list){
+  var m={};
+  list.forEach(function(r){
+    var k=Math.floor(r.x/BIN)+","+Math.floor(r.y/BIN), b=m[k]||(m[k]={key:k,gx:Math.floor(r.x/BIN),gy:Math.floor(r.y/BIN),n:0,cats:{},roads:{},last:0,items:[]});
+    b.n++;b.cats[r.c]=(b.cats[r.c]||0)+1;b.roads[r.r]=(b.roads[r.r]||0)+1;if(r.t>b.last)b.last=r.t;b.items.push(r);
+  });
+  return m;
+}
+function top(o){var best=null,bn=-1;Object.keys(o).forEach(function(k){if(o[k]>bn){bn=o[k];best=k;}});return best;}
+
+/* ---------- colour ---------- */
+function hex(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function mix(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+function rgb(c,a){return "rgba("+Math.round(c[0])+","+Math.round(c[1])+","+Math.round(c[2])+","+(a==null?1:a)+")";}
+var SEQ=["#cde2fb","#86b6ef","#3987e5","#1c5cab","#0d366b"].map(hex);
+function seq(t){t=Math.max(0,Math.min(1,t));var p=t*(SEQ.length-1),i=Math.min(SEQ.length-2,Math.floor(p));return mix(SEQ[i],SEQ[i+1],p-i);}
+
+/* ---------- map ---------- */
+var cvs=$("map"), ctx=cvs.getContext("2d"), hit=[], binHit=[], V=null;
+function makeView(w,h){
+  var r=state.ward<0?{x0:0,y0:0,x1:D.w,y1:D.h}:D.wardRects[state.ward];
+  var vw=(r.x1-r.x0)*1.05, vh=(r.y1-r.y0)*1.05, s=Math.min(w/vw,h/vh), cx=(r.x0+r.x1)/2, cy=(r.y0+r.y1)/2;
+  return {s:s,w:w,h:h,X:function(x){return w/2+(x-cx)*s;},Y:function(y){return h/2-(y-cy)*s;},ix:function(px){return cx+(px-w/2)/s;},iy:function(py){return cy-(py-h/2)/s;}};
+}
+function halo(text,x,y,align,size,weight,color){
+  ctx.font=(weight||"600")+" "+(size||11)+"px "+FONT; ctx.textAlign=align||"left"; ctx.textBaseline="middle";
+  ctx.lineJoin="round"; ctx.lineWidth=3.5; ctx.strokeStyle=css("--surface"); ctx.strokeText(text,x,y);
+  ctx.fillStyle=color||css("--ink"); ctx.fillText(text,x,y);
+}
+function path(pts){ctx.beginPath();pts.forEach(function(p,i){var x=V.X(p[0]),y=V.Y(p[1]);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});}
+function draw(){
+  var w=cvs.clientWidth; if(!w)return;
+  var h=Math.round(w*2/3), dpr=window.devicePixelRatio||1;
+  if(cvs.width!==Math.round(w*dpr)||cvs.height!==Math.round(h*dpr)){cvs.width=Math.round(w*dpr);cvs.height=Math.round(h*dpr);}
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  V=makeView(w,h); hit=[]; binHit=[];
+  ctx.fillStyle=css("--plane"); ctx.fillRect(0,0,w,h);
+  /* built-up area */
+  ctx.fillStyle=css("--built"); ctx.fillRect(V.X(1650),V.Y(2950),1*(V.X(4150)-V.X(1650)),V.Y(1050)-V.Y(2950));
+  /* wards */
+  ctx.save(); ctx.setLineDash([6,5]); ctx.strokeStyle=css("--axis"); ctx.lineWidth=1.25;
+  path([[2800,0],[2800,D.h]]); ctx.stroke(); path([[0,2000],[D.w,2000]]); ctx.stroke(); ctx.restore();
+  D.wardRects.forEach(function(r,i){
+    var lx=i%2===0?r.x0+90:r.x1-90, ly=r.y1-120;
+    ctx.save(); ctx.globalAlpha=.9; halo(D.wards[i].split(" · ")[0].toUpperCase(),V.X(lx),V.Y(ly),i%2===0?"left":"right",12,"700",css("--muted")); ctx.restore();
+  });
+  /* hotspot bins under roads */
+  var list=base(), bm=bins(list), maxN=1;
+  Object.keys(bm).forEach(function(k){if(bm[k].n>maxN)maxN=bm[k].n;});
+  if(state.mode==="hot"){
+    Object.keys(bm).forEach(function(k){
+      var b=bm[k], x0=V.X(b.gx*BIN), x1=V.X((b.gx+1)*BIN), y0=V.Y((b.gy+1)*BIN), y1=V.Y(b.gy*BIN);
+      ctx.fillStyle=rgb(seq(.12+.88*b.n/maxN),.78); ctx.fillRect(x0,y0,x1-x0,y1-y0);
+      binHit.push({b:b,x0:x0,y0:y0,x1:x1,y1:y1});
+    });
+  }
+  /* creek */
+  ctx.save(); ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle=css("--water"); ctx.lineWidth=Math.max(5,V.s*40); path(D.creek); ctx.stroke(); ctx.restore();
+  /* roads */
+  var order={rural:0,local:1,collector:2,arterial:3};
+  D.roads.slice().sort(function(a,b){return order[a.cls]-order[b.cls];}).forEach(function(rd){
+    ctx.save(); ctx.lineCap="round"; ctx.lineJoin="round";
+    if(rd.cls==="arterial"){ctx.strokeStyle=css("--ink2");ctx.lineWidth=4;}
+    else if(rd.cls==="collector"){ctx.strokeStyle=css("--ink2");ctx.lineWidth=2.75;}
+    else if(rd.cls==="local"){ctx.strokeStyle=css("--axis");ctx.lineWidth=2;}
+    else{ctx.strokeStyle=css("--muted");ctx.lineWidth=1.5;ctx.setLineDash([7,4]);}
+    path(rd.pts); ctx.stroke(); ctx.restore();
+  });
+  /* place labels */
+  var vis=function(x,y){return V.X(x)>10&&V.X(x)<w-10&&V.Y(y)>10&&V.Y(y)<h-10;};
+  D.labels.forEach(function(l){
+    if(!vis(l.x,l.y))return; if(w<520&&l.t.indexOf("Road")>=0)return;
+    halo(l.t,V.X(l.x),V.Y(l.y),"left",11,l.t==="Town centre"||l.t==="Willow Creek"?"600":"500",l.t==="Willow Creek"?css("--c1"):css("--ink2"));
+  });
+  /* selected bin outline */
+  if(state.selBin&&bm[state.selBin]){var sb=bm[state.selBin],bx=V.X(sb.gx*BIN),by=V.Y((sb.gy+1)*BIN);ctx.save();ctx.strokeStyle=css("--ink");ctx.lineWidth=2.5;ctx.strokeRect(bx,by,V.X((sb.gx+1)*BIN)-bx,V.Y(sb.gy*BIN)-by);ctx.restore();}
+  /* dots: closed first, open on top */
+  var closed=[],open=[];
+  list.forEach(function(r){(stat(r)===2?closed:open).push(r);});
+  openAll().forEach(function(r){if(!inPeriod(r)&&open.indexOf(r)<0)open.push(r);});
+  var faint=state.mode==="hot";
+  closed.forEach(function(r){
+    var x=V.X(r.x),y=V.Y(r.y); ctx.save(); ctx.globalAlpha=faint?.45:.9; ctx.lineWidth=1.25; ctx.strokeStyle=css("--ink2"); ctx.fillStyle=css("--surface");
+    ctx.beginPath(); ctx.arc(x,y,3.4,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); hit.push({r:r,x:x,y:y,rad:6,open:false});
+  });
+  open.forEach(function(r){
+    var x=V.X(r.x),y=V.Y(r.y),od=overdue(r),rad=od?7.5:6.5;
+    ctx.save(); ctx.fillStyle=od?css("--serious"):css("--c1"); ctx.strokeStyle=css("--surface"); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    if(od){ctx.strokeStyle=css("--ink");ctx.lineWidth=1.25;ctx.beginPath();ctx.arc(x,y,rad+1.5,0,Math.PI*2);ctx.stroke();}
+    ctx.restore(); hit.push({r:r,x:x,y:y,rad:rad+3,open:true});
+  });
+  /* hotspot counts */
+  if(state.mode==="hot"){
+    binHit.forEach(function(o){if(o.b.n>=REP){halo(String(o.b.n),(o.x0+o.x1)/2,(o.y0+o.y1)/2,"center",13,"700");}});
+  }
+  /* selection */
+  if(state.sel){
+    var sr=R.filter(function(r){return r.id===state.sel;})[0];
+    if(sr){var sx=V.X(sr.x),sy=V.Y(sr.y);ctx.save();ctx.strokeStyle=css("--surface");ctx.lineWidth=5;ctx.beginPath();ctx.arc(sx,sy,13,0,Math.PI*2);ctx.stroke();ctx.strokeStyle=css("--ink");ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,13,0,Math.PI*2);ctx.stroke();ctx.restore();}
+  }
+  /* pick point */
+  if(state.pt){
+    var px=V.X(state.pt.x),py=V.Y(state.pt.y);ctx.save();ctx.translate(px,py);ctx.rotate(Math.PI/4);ctx.fillStyle=css("--ink");ctx.strokeStyle=css("--surface");ctx.lineWidth=2.5;ctx.beginPath();ctx.rect(-7,-7,14,14);ctx.stroke();ctx.fill();ctx.restore();
+    halo("New report",px+14,py,"left",11,"700");
+  }
+  /* scale bar and north arrow */
+  var sb1=1000*V.s, by0=h-18;
+  ctx.save(); ctx.strokeStyle=css("--surface"); ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(14,by0-5);ctx.lineTo(14,by0);ctx.lineTo(14+sb1,by0);ctx.lineTo(14+sb1,by0-5);ctx.stroke();
+  ctx.strokeStyle=css("--ink"); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(14,by0-5);ctx.lineTo(14,by0);ctx.lineTo(14+sb1,by0);ctx.lineTo(14+sb1,by0-5);ctx.stroke(); ctx.restore();
+  halo("1 km",14,by0-14,"left",11,"600");
+  ctx.save(); ctx.translate(w-24,h-40); ctx.fillStyle=css("--ink"); ctx.strokeStyle=css("--surface"); ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(0,-14);ctx.lineTo(6,6);ctx.lineTo(0,2);ctx.lineTo(-6,6);ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
+  halo("N",w-24,h-12,"center",11,"700");
+}
+function drawLegend(){
+  var h="";
+  if(state.mode==="reports"){
+    h='<span><i class="lg" style="width:13px;height:13px;background:var(--serious);border:1.25px solid var(--ink)"></i>Open and overdue</span>'
+     +'<span><i class="lg" style="width:12px;height:12px;background:var(--c1)"></i>Open, within target</span>'
+     +'<span><i class="lg" style="width:8px;height:8px;border:1.25px solid var(--ink2);background:var(--surface)"></i>Closed</span>';
+  } else {
+    var st=[0,.25,.5,.75,1].map(function(t){return rgb(seq(.12+.88*t))+" "+Math.round(t*100)+"%";}).join(",");
+    h='<span>Fewer<i class="grad" style="background:linear-gradient(90deg,'+st+')"></i>More reports per 300 m cell</span><span>Numbers mark cells with five or more</span>';
+  }
+  h+='<span><i style="display:inline-block;width:18px;height:0;border-top:2px dashed var(--axis)"></i>Ward boundary</span>';
+  $("legend").innerHTML=h;
+}
+
+/* ---------- KPIs, chips, lists ---------- */
+function drawKpis(){
+  var B=base(), O=openAll(), od=O.filter(overdue).length;
+  var closed=B.filter(function(r){return r.cl!=null;}), med=median(closed.map(function(r){return r.cl;}));
+  var ont=closed.filter(function(r){return r.cl<=target(r);}).length;
+  var bm=bins(B), rep=Object.keys(bm).filter(function(k){return bm[k].n>=REP;}).length;
+  var tiles=[
+    ["Reports received",fmt(B.length),"",({365:"in the last 12 months",90:"in the last 90 days",30:"in the last 30 days"})[state.period]],
+    ["Open now",fmt(O.length),"",'<i class="dot" style="background:var(--serious)"></i>'+fmt(od)+" overdue"],
+    ["Median days to close",med==null?"–":fmt(med,med%1?1:0),"days",fmt(closed.length)+" closed reports"],
+    ["Closed within target",closed.length?fmt(100*ont/closed.length):"–","%",fmt(ont)+" of "+fmt(closed.length)+" closed reports"],
+    ["Repeat locations",fmt(rep),"","cells with 5+ reports"]
+  ];
+  $("kpis").innerHTML=tiles.map(function(t){return '<div class="kpi"><div class="l">'+t[0]+'</div><div class="v">'+t[1]+(t[2]?"<small>"+t[2]+"</small>":"")+'</div><div class="s">'+t[3]+'</div></div>';}).join("");
+}
+function drawChips(){
+  var rows=R.filter(function(r){return inWard(r)&&inPeriod(r);}), cnt=D.cats.map(function(){return 0;});
+  rows.forEach(function(r){cnt[r.c]++;});
+  $("chips").innerHTML=D.cats.map(function(c,i){return '<button type="button" class="chip" data-cat="'+i+'" aria-pressed="'+(state.cats[i]?"true":"false")+'">'+esc(c.name)+' <b>'+cnt[i]+'</b></button>';}).join("");
+}
+function drawLists(){
+  var O=openAll().sort(function(a,b){return (age(b)-target(b))-(age(a)-target(a));});
+  $("attnNote").textContent=fmt(O.length)+" open reports on 31 October 2026, longest overdue first. Select a row to find it on the map.";
+  $("attn").innerHTML=O.length?O.map(function(r){
+    var od=overdue(r), over=age(r)-target(r);
+    return '<tr class="tr'+(state.sel===r.id?" sel":"")+'" tabindex="0" data-id="'+r.id+'"><td>'+r.id+(r.demo?" (demo)":"")+'</td><td>'+esc(D.cats[r.c].name)+'</td><td>'+esc(r.r)+'</td><td class="r">'+age(r)+' d</td>'
+      +'<td><span class="st"><i class="dot" style="background:'+(od?"var(--serious)":"var(--c1)")+'"></i>'+STAT[stat(r)]+(od?" · "+over+" d late":"")+'</span></td></tr>';
+  }).join(""):'<tr><td colspan="5" class="note">No open reports match the filters.</td></tr>';
+  var bm=bins(base()), arr=Object.keys(bm).map(function(k){return bm[k];}).filter(function(b){return b.n>=REP;}).sort(function(a,b){return b.n-a.n||b.last-a.last;});
+  $("rep").innerHTML=arr.length?arr.slice(0,8).map(function(b){
+    return '<tr class="tr'+(state.selBin===b.key?" sel":"")+'" tabindex="0" data-bin="'+b.key+'"><td class="r"><b>'+b.n+'</b></td><td>'+esc(top(b.roads))+'</td><td>'+esc(D.cats[top(b.cats)].name)+'</td><td>'+dlabel(b.last)+'</td></tr>';
+  }).join(""):'<tr><td colspan="4" class="note">No cells with five or more reports for these filters.</td></tr>';
+}
+function infoDefault(){return "Hover a dot for a quick look and select it for details. Data through 31 October 2026.";}
+function reportDetail(r){
+  var s=stat(r), t='<b>'+r.id+(r.demo?" (demo report)":"")+'</b> · '+esc(D.cats[r.c].name)+' · '+esc(r.r)+', '+esc(D.wards[r.w])+'.<br>'+esc(r.desc)+'. Reported '+dlabel(r.t)+' by '+esc(r.ch)+'. ';
+  if(s===2)t+='Closed after '+r.cl+' day'+(r.cl===1?"":"s")+' (target '+target(r)+'), '+(r.cl<=target(r)?"on time.":"late.");
+  else t+=STAT[s]+(r.ack!=null?", acknowledged after "+r.ack+" day"+(r.ack===1?"":"s"):"")+'. Open '+age(r)+' days against a target of '+target(r)+(overdue(r)?" ("+(age(r)-target(r))+" days late).":".");
+  return t;
+}
+function binDetail(b){
+  var cats=Object.keys(b.cats).sort(function(x,y){return b.cats[y]-b.cats[x];}).slice(0,3).map(function(k){return esc(D.cats[k].name)+" ("+b.cats[k]+")";}).join(", ");
+  return '<b>'+b.n+' reports</b> in a 300 m cell near '+esc(top(b.roads))+'. Mostly '+cats+'. Latest report '+dlabel(b.last)+'.';
+}
+
+/* ---------- charts ---------- */
+var charts={}, reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function valsPlugin(fn,horiz){return {id:"vals",afterDatasetsDraw:function(ch){
+  var m=ch.getDatasetMeta(0),c=ch.ctx; c.save(); c.fillStyle=css("--ink"); c.font="600 12px "+FONT; c.textBaseline="middle";
+  m.data.forEach(function(b,i){var t=fn(i); if(t==null)return; if(horiz){c.textAlign="left";c.fillText(t,b.x+6,b.y);}else{c.textAlign="center";c.fillText(t,b.x,b.y-9);}});
+  c.restore();}};}
+function tickPlugin(){return {id:"tick",afterDatasetsDraw:function(ch){
+  var m=ch.getDatasetMeta(0),c=ch.ctx,sx=ch.scales.x; c.save(); c.strokeStyle=css("--ink"); c.lineWidth=2.5;
+  m.data.forEach(function(b,i){var x=sx.getPixelForValue(D.cats[i].target); c.beginPath(); c.moveTo(x,b.y-b.height/2-3); c.lineTo(x,b.y+b.height/2+3); c.stroke();});
+  c.restore();}};}
+var c2ids=[];
+function makeCharts(){
+  Object.keys(charts).forEach(function(k){if(charts[k]){charts[k].destroy();charts[k]=null;}});
+  if(typeof Chart==="undefined"){["c1","c2","c3"].forEach(function(id){$(id).parentNode.innerHTML='<p class="note">Charts did not load. Check your connection and reload.</p>';});return;}
+  var ink2=css("--ink2"),muted=css("--muted"),grid=css("--grid"),axis=css("--axis"),c1=css("--c1");
+  Chart.defaults.font.family=FONT; Chart.defaults.font.size=12; Chart.defaults.color=ink2;
+  var anim=reduce?false:{duration:200};
+  var months=[],i; for(i=0;i<12;i++){months.push(new Date(2025,10+i,1).toLocaleDateString("en-CA",{month:"short"}));}
+  var mvals=[];
+  charts.c1=new Chart($("c1"),{type:"bar",data:{labels:months,datasets:[{data:[],backgroundColor:c1,borderRadius:{topLeft:4,topRight:4},maxBarThickness:26}]},
+    plugins:[valsPlugin(function(i){var v=charts.c1.data.datasets[0].data[i];return v?String(v):null;},false)],
+    options:{responsive:true,maintainAspectRatio:false,animation:anim,layout:{padding:{top:16}},plugins:{legend:{display:false},tooltip:{callbacks:{title:function(it){var j=it[0].dataIndex;return new Date(2025,10+j,1).toLocaleDateString("en-CA",{month:"long",year:"numeric"});},label:function(c){return fmt(c.parsed.y)+" reports";}}}},
+      scales:{x:{grid:{display:false},border:{color:axis},ticks:{color:ink2}},y:{beginAtZero:true,ticks:{color:muted,precision:0},grid:{color:grid},border:{display:false}}}}});
+  charts.c2=new Chart($("c2"),{type:"bar",data:{labels:[],datasets:[{data:[],backgroundColor:c1,borderRadius:{topRight:4,bottomRight:4},maxBarThickness:22}]},
+    plugins:[valsPlugin(function(i){var v=charts.c2.data.datasets[0].data[i];return v==null?null:String(v);},true)],
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:anim,layout:{padding:{right:30}},
+      onClick:function(e,el,ch){var p=ch.getElementsAtEventForMode(e,"nearest",{intersect:false},true);if(p.length)solo(c2ids[p[0].index]);},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.x)+" reports";}}}},
+      scales:{x:{beginAtZero:true,ticks:{color:muted,precision:0},grid:{color:grid},border:{display:false}},y:{grid:{display:false},border:{color:axis},ticks:{color:ink2}}}}});
+  charts.c3=new Chart($("c3"),{type:"bar",data:{labels:D.cats.map(function(c){return c.name;}),datasets:[{data:[],backgroundColor:[],borderRadius:{topRight:4,bottomRight:4},maxBarThickness:20}]},
+    plugins:[tickPlugin(),valsPlugin(function(i){var v=charts.c3.data.datasets[0].data[i];return charts.c3.$n&&charts.c3.$n[i]?fmt(v,v%1?1:0)+" d":"no closed";},true)],
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:anim,layout:{padding:{right:46}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){var n=charts.c3.$n[c.dataIndex];return n?"Median "+fmt(c.parsed.x,c.parsed.x%1?1:0)+" d, target "+D.cats[c.dataIndex].target+" d, "+n+" closed":"No closed reports";}}}},
+      scales:{x:{beginAtZero:true,suggestedMax:25,ticks:{color:muted,precision:0},grid:{color:grid},border:{display:false}},y:{grid:{display:false},border:{color:axis},ticks:{color:ink2}}}}});
+}
+function updCharts(){
+  if(!charts.c1)return;
+  var B=base(), mv=[],i; for(i=0;i<12;i++)mv.push(0);
+  B.forEach(function(r){var d=dateOf(r.t),j=(d.getFullYear()-2025)*12+d.getMonth()-10; if(j>=0&&j<12)mv[j]++;});
+  charts.c1.data.datasets[0].data=mv; charts.c1.update("none");
+  var cc=D.cats.map(function(c,k){return {k:k,n:B.filter(function(r){return r.c===k;}).length};}).sort(function(a,b){return b.n-a.n;});
+  c2ids=cc.map(function(o){return o.k;});
+  charts.c2.data.labels=cc.map(function(o){return D.cats[o.k].name;}); charts.c2.data.datasets[0].data=cc.map(function(o){return o.n;}); charts.c2.update("none");
+  var med=[],ns=[],col=[],c1=css("--c1"),c2=css("--c2");
+  D.cats.forEach(function(c,k){var cl=B.filter(function(r){return r.c===k&&r.cl!=null;}).map(function(r){return r.cl;}),m=median(cl);ns.push(cl.length);med.push(m==null?0:m);col.push(m!=null&&m>c.target?c2:c1);});
+  charts.c3.$n=ns; charts.c3.data.datasets[0].data=med; charts.c3.data.datasets[0].backgroundColor=col; charts.c3.update("none");
+}
+function solo(k){
+  var only=state.cats.every(function(v,i){return i===k?v:!v;});
+  state.cats=state.cats.map(function(v,i){return only?true:i===k;});
+  renderAll();
+}
+
+/* ---------- render ---------- */
+function renderAll(){
+  var wn=state.ward<0?"Reports across town":"Reports in "+D.wards[state.ward];
+  $("mapTitle").textContent=wn;
+  $("mapNote").textContent=(state.mode==="reports"?"Open reports are large dots; closed reports are small and hollow.":"Reports counted in 300 m cells. Darker cells have more.")+(cvs.clientWidth&&cvs.clientWidth<560&&state.ward<0?" Pick a ward above to zoom in.":"");
+  $("selWard").value=String(state.ward); $("selPeriod").value=String(state.period);
+  cvs.setAttribute("aria-label",wn+", "+(state.mode==="reports"?"each dot is a report":"shaded by report count")+". The lists below give the same information as text.");
+  drawChips(); drawKpis(); drawLegend(); draw(); drawLists(); updCharts();
+  $("readout").innerHTML=state.sel?reportDetail(R.filter(function(r){return r.id===state.sel;})[0]):infoDefault();
+}
+
+/* ---------- events ---------- */
+$("selPeriod").addEventListener("change",function(e){state.period=parseInt(e.target.value,10);state.sel=null;state.selBin=null;renderAll();});
+$("selWard").addEventListener("change",function(e){state.ward=parseInt(e.target.value,10);state.sel=null;state.selBin=null;renderAll();});
+$("btnReset").addEventListener("click",function(){state.period=365;state.ward=-1;state.cats=D.cats.map(function(){return true;});state.sel=null;state.selBin=null;renderAll();});
+$("chips").addEventListener("click",function(e){var b=e.target.closest("[data-cat]");if(!b)return;var k=parseInt(b.getAttribute("data-cat"),10);state.cats[k]=!state.cats[k];if(!state.cats.some(function(v){return v;}))state.cats=state.cats.map(function(){return true;});renderAll();});
+Array.prototype.forEach.call(document.querySelectorAll("[data-mode]"),function(b){b.addEventListener("click",function(){
+  state.mode=b.getAttribute("data-mode");
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mode]"),function(o){o.setAttribute("aria-pressed",o===b?"true":"false");});
+  renderAll();});});
+function rowSel(e,attr){var r=e.target.closest("["+attr+"]");return r?r.getAttribute(attr):null;}
+function pickRow(e){
+  if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;
+  var id=rowSel(e,"data-id"),bn=rowSel(e,"data-bin");
+  if(id){e.preventDefault();state.sel=id;state.selBin=null;renderAll();}
+  else if(bn){e.preventDefault();state.selBin=bn;state.sel=null;renderAll();var b=bins(base())[bn];if(b)$("readout").innerHTML=binDetail(b);}
+}
+$("attn").addEventListener("click",pickRow); $("attn").addEventListener("keydown",pickRow);
+$("rep").addEventListener("click",pickRow); $("rep").addEventListener("keydown",pickRow);
+
+function locText(){return state.pt?"Location chosen near "+nearestRoad(state.pt.x,state.pt.y)+", "+D.wards[wardOf(state.pt.x,state.pt.y)]+".":"No location chosen yet.";}
+var tip=$("tip");
+function ptr(e){var b=cvs.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top,w:b.width,h:b.height};}
+function nearestHit(p){
+  var best=null,bd=1e9;
+  hit.forEach(function(o){var d=Math.hypot(o.x-p.x,o.y-p.y);if(d<=o.rad+4&&(d<bd||(o.open&&best&&!best.open&&d<bd+6))){bd=d;best=o;}});
+  return best;
+}
+function tipText(p){
+  if(state.pick)return "Select where the problem is";
+  if(state.mode==="reports"){var h=nearestHit(p);if(!h)return null;var r=h.r;return "<b>"+r.id+"</b> · "+esc(D.cats[r.c].name)+"<br>"+esc(r.r)+" · "+dlabel(r.t)+"<br>"+STAT[stat(r)]+(overdue(r)?" · overdue":"");}
+  for(var i=0;i<binHit.length;i++){var o=binHit[i];if(p.x>=o.x0&&p.x<=o.x1&&p.y>=o.y0&&p.y<=o.y1){return "<b>"+o.b.n+" report"+(o.b.n===1?"":"s")+"</b><br>Near "+esc(top(o.b.roads))+"<br>"+esc(D.cats[top(o.b.cats)].name);}}
+  return null;
+}
+cvs.addEventListener("pointermove",function(e){
+  var p=ptr(e),t=tipText(p);
+  if(!t){tip.hidden=true;return;}
+  tip.innerHTML=t; tip.hidden=false;
+  var x=p.x+14,y=p.y+16,w=tip.offsetWidth,h=tip.offsetHeight;
+  if(x+w>p.w-4)x=Math.max(4,p.x-w-14); if(y+h>p.h-4)y=Math.max(4,p.y-h-12);
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+});
+cvs.addEventListener("pointerleave",function(){tip.hidden=true;});
+cvs.addEventListener("click",function(e){
+  var p=ptr(e);
+  if(state.pick){
+    var x=Math.round(V.ix(p.x)),y=Math.round(V.iy(p.y));
+    if(x<0||y<0||x>D.w||y>D.h)return;
+    state.pt={x:x,y:y}; state.pick=false; cvs.className=""; $("btnPick").textContent="Change location";
+    $("fLoc").textContent=locText();
+    $("btnSubmit").disabled=false; draw(); return;
+  }
+  if(state.mode==="reports"){
+    var h=nearestHit(p);
+    if(h){state.sel=h.r.id;state.selBin=null;renderAll();}
+  } else {
+    for(var i=0;i<binHit.length;i++){var o=binHit[i];if(p.x>=o.x0&&p.x<=o.x1&&p.y>=o.y0&&p.y<=o.y1){state.selBin=o.b.key;state.sel=null;renderAll();$("readout").innerHTML=binDetail(o.b);return;}}
+  }
+});
+$("btnPick").addEventListener("click",function(){
+  state.pick=!state.pick; cvs.className=state.pick?"pick":"";
+  $("fLoc").textContent=state.pick?"Select the location on the map above.":locText();
+  if(state.pick&&state.ward>=0){state.ward=-1;renderAll();}
+});
+$("form").addEventListener("submit",function(e){
+  e.preventDefault(); if(!state.pt)return;
+  var c=parseInt($("fType").value,10), d=$("fDesc").value.trim();
+  state.demo++;
+  var r={id:"R-DEMO-"+state.demo,t:ASOF,c:c,x:state.pt.x,y:state.pt.y,w:wardOf(state.pt.x,state.pt.y),r:nearestRoad(state.pt.x,state.pt.y),ch:"Web form",ack:null,cl:null,desc:d||"No description given",demo:true};
+  R.push(r); state.sel=r.id; state.selBin=null; state.pt=null; $("fDesc").value=""; $("btnSubmit").disabled=true; $("btnPick").textContent="Choose on the map";
+  $("fLoc").textContent="No location chosen yet.";
+  var m=$("fMsg"); m.hidden=false; m.textContent="Thanks. Your demo report "+r.id+" was added to this page. It appears on the map and in the lists with status New. It is not saved or sent anywhere.";
+  state.cats=D.cats.map(function(){return true;}); state.ward=-1; state.period=365; renderAll();
+});
+
+try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){makeCharts();renderAll();});}catch(_){}
+try{new MutationObserver(function(){makeCharts();renderAll();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});}catch(_){}
+try{var lastW=0;new ResizeObserver(function(){var w=cvs.clientWidth;if(w!==lastW){lastW=w;draw();}}).observe(cvs);}catch(_){}
+
+/* ---------- init ---------- */
+$("selWard").innerHTML='<option value="-1">All wards</option>'+D.wards.map(function(w,i){return '<option value="'+i+'">'+esc(w)+'</option>';}).join("");
+$("fType").innerHTML=D.cats.map(function(c,i){return '<option value="'+i+'">'+esc(c.name)+'</option>';}).join("");
+makeCharts(); renderAll();
+})();
+</script>
+</body>
+</html>
