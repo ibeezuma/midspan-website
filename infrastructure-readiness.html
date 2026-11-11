@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Community Infrastructure Readiness</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+html,body{margin:0}
+/* Layout: filter strip, five KPI tiles, region map beside the selected community, then trend, band and ranking charts and the priority list.
+   Palette: warm neutrals with a four-step readiness ramp (rust to blue) used only for readiness bands on the map and bars. */
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --onc1:#ffffff;
+  --c1:#2a78d6; --c2:#eb6834; --water:#b6d3f2; --warnink:#b3261e;
+  --b1:#b8431a; --b2:#e9a15a; --b3:#86b2e6; --b4:#2a78d6;
+  --tipbg:#0b0b0b; --tipfg:#fcfcfb;
+  --sys:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --onc1:#0b0b0b;
+    --c1:#3987e5; --c2:#d95926; --water:#2b4f7a; --warnink:#f08a80;
+    --b1:#e2693a; --b2:#c98a45; --b3:#5b8fcf; --b4:#4a95ee;
+    --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --onc1:#0b0b0b;
+  --c1:#3987e5; --c2:#d95926; --water:#2b4f7a; --warnink:#f08a80;
+  --b1:#e2693a; --b2:#c98a45; --b3:#5b8fcf; --b4:#4a95ee;
+  --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sys);font-size:14px;line-height:1.45;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.app>*,.main>*,.col>*{min-width:0;max-width:100%}
+h1,h2,h3,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(24px,4.4vw,32px);line-height:1.15;font-weight:650;text-wrap:balance}
+.sub{color:var(--ink2);margin-top:4px;max-width:74ch}
+.demo{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--axis);color:var(--ink2);border-radius:999px;padding:4px 10px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px;min-width:0}
+.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}
+h2{font-size:15px;font-weight:650}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+button,select{font:inherit;color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--ink2)}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible,.tr:focus-visible,canvas:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end}
+.fgrp{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2);min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:1px solid var(--axis);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+.chip b{font-variant-numeric:tabular-nums;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--c1);border-color:var(--c1);color:var(--onc1)}
+.chip[aria-pressed="false"]{opacity:.75}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);border:0;border-right:1px solid var(--axis);padding:6px 12px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--c1);color:var(--onc1);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.main{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mapwrap{position:relative;border:1px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--plane)}
+canvas#map{display:block;width:100%;height:auto;cursor:pointer}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:12px;padding:6px 9px;border-radius:6px;max-width:240px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none}
+.ln{display:inline-block;width:22px;height:0;border-top:2px solid var(--ink2)}
+.chartbox{position:relative;height:200px;margin-top:8px}
+.chartbox.tall{height:300px}
+.dtitle{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dtitle h3{font-size:18px;font-weight:650}
+.bigscore{font-size:32px;font-weight:650;line-height:1;font-variant-numeric:tabular-nums;text-align:right}
+.band{font-size:12px;color:var(--ink2);text-align:right;margin-top:2px}
+.bars{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.brow{display:grid;grid-template-columns:84px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:13px}
+.brow .track{height:10px;background:var(--grid);border-radius:5px;overflow:hidden}
+.brow .fill{height:100%;border-radius:5px}
+.brow .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+dl.facts{margin:0;display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px 10px;font-size:13px}
+dl.facts dt{color:var(--muted)}
+dl.facts dd{margin:0}
+.step{margin-top:12px;padding:10px 12px;background:var(--plane);border:1px solid var(--grid);border-radius:8px;font-size:13px}
+.step b{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);margin-bottom:2px;font-weight:600}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.r{text-align:right} th.r{text-align:right}
+td:first-child,td.r{white-space:nowrap}
+.tr{cursor:pointer}
+.tr:hover td,.tr.sel td{background:var(--plane)}
+.tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--c1)}
+.pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-width:96ch}
+@media (max-width:960px){.main{display:flex;flex-direction:column;align-items:stretch}.col{display:contents}.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}}
+@media (max-width:560px){
+  .nx{display:none}
+  table{min-width:0;font-size:12px}
+  th,td{padding:6px 4px}
+  .pill{white-space:normal;align-items:flex-start}
+  .pill .dot{margin-top:4px}
+  .kpi:last-child:nth-child(odd){grid-column:1 / -1}
+  .brow{grid-template-columns:70px minmax(0,1fr) 30px}
+  dl.facts{grid-template-columns:80px minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Midspan Geospatial Ltd · Infrastructure planning</p>
+      <h1>Community Infrastructure Readiness</h1>
+      <p class="sub">Fourteen fictional communities in an invented northern prairie region, scored on water, access, power, broadband and housing. Use it to see where investment closes the biggest gaps and what to do first.</p>
+    </div>
+    <span class="demo">Fictional communities · synthetic data</span>
+  </header>
+
+  <section class="card filters" aria-label="Filters">
+    <div class="fgrp"><span id="lblAcc">Year-round access</span><div class="chips" id="chips" role="group" aria-labelledby="lblAcc"></div></div>
+    <div class="fgrp"><span id="lblDom">Map and ranking show</span><div class="seg" id="seg" role="group" aria-labelledby="lblDom"></div></div>
+    <button class="btn" id="btnReset" type="button">Reset filters</button>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Summary indicators"></section>
+
+  <section class="main">
+    <div class="col">
+      <article class="card o1">
+        <div class="cardhead"><div><h2 id="mapTitle">Readiness across the region</h2><p class="note">Dot size shows population. Select a community for detail.</p></div></div>
+        <div class="mapwrap">
+          <canvas id="map" width="1000" height="750" role="img" aria-label="Schematic map of fourteen fictional communities coloured by readiness score" tabindex="0"></canvas>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </article>
+      <article class="card o6">
+        <div class="cardhead"><div><h2>Priority list</h2><p class="note" id="listNote"></p></div></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Community</th><th class="r">People</th><th class="r">Score</th><th>Biggest gap</th><th class="nx">Next step</th><th>Plan</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <div class="col">
+      <article class="card o2" id="detail" aria-live="polite"></article>
+      <article class="card o3">
+        <h2>Water advisories over 24 months</h2>
+        <p class="note">Communities with an active boil water or do-not-consume advisory, and how many have lasted 12 months or more.</p>
+        <div class="chartbox"><canvas id="c1" role="img" aria-label="Line chart of communities under a water advisory by month"></canvas></div>
+      </article>
+      <article class="card o4">
+        <h2>Communities by readiness band</h2>
+        <p class="note">Count of communities in each band, for each area.</p>
+        <div class="chartbox tall"><canvas id="c2" role="img" aria-label="Stacked bar chart of communities by readiness band for each infrastructure area"></canvas></div>
+      </article>
+      <article class="card o5">
+        <h2 id="rankTitle">Overall ranking</h2>
+        <p class="note">Score out of 100. The line marks 70, the level this demo treats as ready enough.</p>
+        <div class="chartbox tall"><canvas id="c3" role="img" aria-label="Bar chart of readiness score by community"></canvas></div>
+      </article>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Every community, number and route here is invented for demonstration. They do not describe any real place or people, and any resemblance of a name to a real place is coincidence.</p>
+    <p>How scores work: each area is scored 0 to 100, higher is better. Water uses plant condition, certified operator and advisory status (an advisory of 12 months or more takes a further 10 points off). Access uses route type and condition. Power uses grid or diesel supply and outage hours. Broadband uses the best service tier. Housing uses major repairs and crowding. Overall is water 30%, access 20%, power 20%, broadband 15%, housing 15%. This is an illustrative index, not an official measure.</p>
+    <p>In a real project the community owns its data and decides who sees it and how it is used. A tool like this would run on the community's own system under its own access rules.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = {"asof":"2026-10-31","months":["Nov 24","Dec 24","Jan 25","Feb 25","Mar 25","Apr 25","May 25","Jun 25","Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26","Jul 26","Aug 26","Sep 26","Oct 26"],"w":400,"h":300,"hubs":[{"name":"Regional hub","x":200,"y":270}],"routes":[{"name":"Highway 1 West","type":"highway","pts":[[200,270],[175,250],[150,235],[100,225],[40,215]]},{"name":"Highway 1 East","type":"highway","pts":[[200,270],[235,262],[265,250],[300,225],[330,205]]},{"name":"Highway 2 North","type":"highway","pts":[[200,270],[202,235],[200,185]]},{"name":"Spruce Landing road","type":"secondary","pts":[[150,235],[120,215],[95,200]]},{"name":"Gull Narrows winter road","type":"winter","pts":[[200,185],[208,150],[215,120]]},{"name":"Stony Point winter road","type":"winter","pts":[[330,205],[318,178],[300,150]]},{"name":"Rockford winter road","type":"winter","pts":[[300,150],[322,122],[345,95]]},{"name":"Willow Run winter road","type":"winter","pts":[[95,200],[108,175],[120,150]]},{"name":"Air link Pine Bluff","type":"air","pts":[[215,120],[145,108],[70,95]]},{"name":"Air link Marsh Haven","type":"air","pts":[[215,120],[188,95],[160,70]]},{"name":"Air link Cinder Hill","type":"air","pts":[[215,120],[232,88],[250,55]]},{"name":"Air link Tamarack Bend","type":"air","pts":[[215,120],[262,78],[310,35]]}],"river":[[262,0],[250,40],[270,90],[255,140],[240,190],[250,235],[238,300]],"lakes":[[[335,70],[352,66],[366,76],[362,92],[346,100],[332,88]],[[60,120],[80,114],[92,124],[84,140],[64,142]]],"weights":{"water":0.3,"access":0.2,"power":0.2,"bb":0.15,"housing":0.15},"comm":[{"id":"C01","name":"Aspen Ridge","x":150,"y":235,"pop":620,"access":"All-season","dist":85,"sys":"Piped","plant":4,"op":true,"adv":null,"outage":6,"power":"Grid","bb":3,"repair":14,"crowd":8,"road":4,"events":[[2,3]],"chk":{"water":90.0,"access":95,"power":95.2,"bb":100,"housing":82.6,"overall":92.4},"weakest":"housing","step":"Fund major repairs and add units to ease crowding","status":"Not started"},{"id":"C02","name":"Cutbank Flats","x":265,"y":250,"pop":410,"access":"All-season","dist":70,"sys":"Piped","plant":3,"op":true,"adv":{"type":"boil","days":120},"outage":14,"power":"Grid","bb":2,"repair":22,"crowd":12,"road":3,"events":[[0,2],[19,null]],"chk":{"water":59.0,"access":90,"power":88.8,"bb":65,"housing":73.0,"overall":74.2},"weakest":"water","step":"Finish treatment upgrade and certify a second operator","status":"Funded"},{"id":"C03","name":"Spruce Landing","x":95,"y":200,"pop":980,"access":"All-season","dist":120,"sys":"Piped","plant":3,"op":false,"adv":{"type":"boil","days":410},"outage":22,"power":"Grid","bb":2,"repair":31,"crowd":20,"road":3,"events":[[10,null]],"chk":{"water":34.0,"access":90,"power":82.4,"bb":65,"housing":60.1,"overall":63.4},"weakest":"water","step":"Finish treatment upgrade and certify a second operator","status":"Planned"},{"id":"C04","name":"Heron Bay","x":330,"y":205,"pop":1450,"access":"All-season","dist":150,"sys":"Piped","plant":4,"op":true,"adv":null,"outage":9,"power":"Grid","bb":3,"repair":18,"crowd":10,"road":4,"events":[[8,9]],"chk":{"water":90.0,"access":95,"power":92.8,"bb":100,"housing":77.8,"overall":91.2},"weakest":"housing","step":"Fund major repairs and add units to ease crowding","status":"Planned"},{"id":"C05","name":"Birch Crossing","x":200,"y":185,"pop":330,"access":"All-season","dist":95,"sys":"Wells","plant":3,"op":true,"adv":null,"outage":18,"power":"Grid","bb":1,"repair":26,"crowd":15,"road":3,"events":[[11,13]],"chk":{"water":80.0,"access":90,"power":85.6,"bb":30,"housing":67.6,"overall":73.8},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Not started"},{"id":"C06","name":"Stony Point","x":300,"y":150,"pop":540,"access":"Winter road","dist":210,"sys":"Piped","plant":2,"op":false,"adv":{"type":"dnc","days":640},"outage":38,"power":"Diesel","bb":1,"repair":38,"crowd":27,"road":2,"events":[[2,null]],"chk":{"water":15.2,"access":50,"power":29.6,"bb":30,"housing":49.6,"overall":32.4},"weakest":"water","step":"Finish treatment upgrade and certify a second operator","status":"Not started"},{"id":"C07","name":"Willow Run","x":120,"y":150,"pop":260,"access":"Winter road","dist":240,"sys":"Trucked","plant":2,"op":false,"adv":{"type":"boil","days":280},"outage":44,"power":"Diesel","bb":1,"repair":41,"crowd":30,"road":2,"events":[[14,null]],"chk":{"water":34.0,"access":50,"power":24.8,"bb":30,"housing":45.1,"overall":36.4},"weakest":"power","step":"Add a solar-diesel hybrid or a grid connection","status":"Funded"},{"id":"C08","name":"Gull Narrows","x":215,"y":120,"pop":1100,"access":"Winter road","dist":260,"sys":"Piped","plant":3,"op":true,"adv":{"type":"boil","days":75},"outage":31,"power":"Grid","bb":2,"repair":29,"crowd":22,"road":3,"events":[[4,6],[21,null]],"chk":{"water":59.0,"access":55,"power":75.2,"bb":65,"housing":60.7,"overall":62.6},"weakest":"access","step":"Engineer a longer winter road season and study an all-season link","status":"Funded"},{"id":"C09","name":"Pine Bluff","x":70,"y":95,"pop":190,"access":"Fly-in","dist":300,"sys":"Trucked","plant":2,"op":false,"adv":{"type":"dnc","days":900},"outage":60,"power":"Diesel","bb":0,"repair":47,"crowd":36,"road":2,"events":[[-7,null]],"chk":{"water":15.2,"access":25,"power":20,"bb":5,"housing":36.1,"overall":19.7},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Funded"},{"id":"C10","name":"Rockford Lake","x":345,"y":95,"pop":720,"access":"Winter road","dist":280,"sys":"Piped","plant":3,"op":true,"adv":null,"outage":28,"power":"Diesel","bb":1,"repair":33,"crowd":24,"road":3,"events":[[15,19]],"chk":{"water":80.0,"access":55,"power":37.6,"bb":30,"housing":55.9,"overall":55.4},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Planned"},{"id":"C11","name":"Marsh Haven","x":160,"y":70,"pop":150,"access":"Fly-in","dist":330,"sys":"Wells","plant":2,"op":false,"adv":null,"outage":52,"power":"Diesel","bb":0,"repair":44,"crowd":33,"road":1,"events":[],"chk":{"water":55.0,"access":20,"power":20,"bb":5,"housing":40.6,"overall":31.3},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Not started"},{"id":"C12","name":"Cinder Hill","x":250,"y":55,"pop":480,"access":"Fly-in","dist":360,"sys":"Piped","plant":2,"op":false,"adv":{"type":"dnc","days":380},"outage":47,"power":"Diesel","bb":0,"repair":39,"crowd":29,"road":2,"events":[[11,null]],"chk":{"water":15.2,"access":25,"power":22.4,"bb":5,"housing":47.5,"overall":21.9},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Planned"},{"id":"C13","name":"Tamarack Bend","x":310,"y":35,"pop":270,"access":"Fly-in","dist":390,"sys":"Trucked","plant":3,"op":true,"adv":null,"outage":41,"power":"Diesel","bb":1,"repair":36,"crowd":25,"road":2,"events":[[6,10]],"chk":{"water":80.0,"access":25,"power":27.2,"bb":30,"housing":52.6,"overall":46.8},"weakest":"access","step":"Upgrade the airstrip and study a barge landing","status":"Planned"},{"id":"C14","name":"Fox Hollow","x":40,"y":215,"pop":340,"access":"All-season","dist":160,"sys":"Wells","plant":3,"op":true,"adv":null,"outage":17,"power":"Grid","bb":1,"repair":30,"crowd":18,"road":3,"events":[[18,19]],"chk":{"water":80.0,"access":90,"power":86.4,"bb":30,"housing":62.2,"overall":73.1},"weakest":"bb","step":"Build fibre backhaul or low-earth-orbit service with community Wi-Fi","status":"Not started"}]};
+if(!D){return;}
+var $=function(id){return document.getElementById(id);};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var fmt=function(n,d){d=d||0;return Number(n).toLocaleString("en-CA",{minimumFractionDigits:d,maximumFractionDigits:d});};
+var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+
+/*SCORE-START*/
+var W={water:0.30,access:0.20,power:0.20,bb:0.15,housing:0.15};
+function clamp(v){return Math.max(0,Math.min(100,v));}
+function scoreOf(c){
+  var advS={none:100,boil:40,dnc:15}[c.adv?c.adv.type:"none"];
+  var water=0.40*(c.plant-1)*25+0.25*(c.op?100:40)+0.35*advS;
+  if(c.adv&&c.adv.days>=365)water-=10;
+  var access={"All-season":80,"Winter road":45,"Fly-in":20}[c.access]+(c.road-1)*5;
+  var power=(c.power==="Grid"?100:60)-Math.min(40,c.outage*0.8);
+  var bb=[5,30,65,100][c.bb];
+  var housing=100-c.repair*0.9-c.crowd*0.6;
+  var s={water:clamp(water),access:clamp(access),power:clamp(power),bb:clamp(bb),housing:clamp(housing)};
+  s.overall=s.water*W.water+s.access*W.access+s.power*W.power+s.bb*W.bb+s.housing*W.housing;
+  return s;
+}
+function bandOf(v){return v<40?0:v<60?1:v<80?2:3;}
+/*SCORE-END*/
+
+var BANDS=["Major gap","Gap","Minor gap","Ready"], BCOL=["--b1","--b2","--b3","--b4"], BRANGE=["under 40","40 to 59","60 to 79","80 and over"];
+var DOMS=[["overall","Overall"],["water","Water"],["access","Access"],["power","Power"],["bb","Broadband"],["housing","Housing"]];
+var DNAME={overall:"Overall",water:"Water",access:"Access",power:"Power",bb:"Broadband",housing:"Housing"};
+var ACC=["All-season","Winter road","Fly-in"];
+var BBN=["No service or satellite only","Under 10/2 Mbps","10/2 to 49/10 Mbps","50/10 Mbps or faster"];
+var ADVN={boil:"Boil water advisory",dnc:"Do not consume"};
+var C=D.comm; C.forEach(function(c){c.s=scoreOf(c);});
+var byId={}; C.forEach(function(c){byId[c.id]=c;});
+var state={acc:[true,true,true],dom:"overall",sel:null};
+
+function filtered(){return C.filter(function(c){return state.acc[ACC.indexOf(c.access)];});}
+function dot(v){return '<i class="dot" style="background:var('+BCOL[bandOf(v)]+')"></i>';}
+
+/* controls */
+function buildControls(){
+  $("chips").innerHTML=ACC.map(function(a,i){var n=C.filter(function(c){return c.access===a;}).length;
+    return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="'+state.acc[i]+'">'+a+' <b>'+n+'</b></button>';}).join("");
+  $("seg").innerHTML=DOMS.map(function(d){return '<button type="button" data-d="'+d[0]+'" aria-pressed="'+(state.dom===d[0])+'">'+d[1]+'</button>';}).join("");
+}
+$("chips").addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;var i=+b.dataset.i;
+  var on=state.acc.filter(Boolean).length; if(state.acc[i]&&on===1)return; state.acc[i]=!state.acc[i]; buildControls(); renderAll();});
+$("seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;state.dom=b.dataset.d;buildControls();renderAll();});
+$("btnReset").addEventListener("click",function(){state.acc=[true,true,true];state.dom="overall";state.sel=null;buildControls();renderAll();});
+
+/* KPIs */
+function renderKpis(list){
+  var pop=list.reduce(function(a,c){return a+c.pop;},0);
+  var act=list.filter(function(c){return c.adv;}), lt=act.filter(function(c){return c.adv.days>=365;});
+  var noRoad=list.filter(function(c){return c.access!=="All-season";});
+  var lowBb=list.filter(function(c){return c.bb<3;});
+  var avg=list.reduce(function(a,c){return a+c.s.overall;},0)/Math.max(1,list.length);
+  var actPop=act.reduce(function(a,c){return a+c.pop;},0);
+  var T=[["Communities",list.length,"",fmt(pop)+" people"],
+         ["Active water advisories",act.length,"",lt.length+" for 12 months or more · "+fmt(actPop)+" people"],
+         ["Without an all-season road",noRoad.length,"",fmt(noRoad.reduce(function(a,c){return a+c.pop;},0))+" people"],
+         ["Broadband under 50/10",lowBb.length,"of "+list.length,fmt(lowBb.reduce(function(a,c){return a+c.pop;},0))+" people"],
+         ["Average readiness",fmt(avg,0),"/ 100",BANDS[bandOf(avg)]]];
+  $("kpis").innerHTML=T.map(function(t){return '<div class="kpi"><div class="l">'+t[0]+'</div><div class="v">'+t[1]+(t[2]?'<small>'+t[2]+'</small>':'')+'</div><div class="s">'+esc(t[3])+'</div></div>';}).join("");
+}
+
+/* map */
+var cvs=$("map"), ctx=cvs.getContext("2d"), hit=[], PAD=18;
+function sx(x,w){return PAD+x*(w-2*PAD)/D.w;}
+function sy(y,h){return PAD+y*(h-2*PAD)/D.h;}
+var NARROW=false;
+function radius(pop){return (6+Math.sqrt(pop)/3.2)*(NARROW?0.72:1);}
+function drawMap(list){
+  var cssW=cvs.clientWidth||700; NARROW=cssW<560; var dpr=window.devicePixelRatio||1, w=cssW, h=Math.round(cssW*0.75);
+  cvs.width=Math.round(w*dpr); cvs.height=Math.round(h*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+  var ink2=css("--ink2"), grid=css("--grid"), water=css("--water"), plane=css("--plane"), surf=css("--surface"), warn=css("--warnink");
+  ctx.fillStyle=plane; ctx.fillRect(0,0,w,h);
+  D.lakes.forEach(function(l){ctx.beginPath();l.forEach(function(p,i){var X=sx(p[0],w),Y=sy(p[1],h);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.closePath();ctx.fillStyle=water;ctx.fill();});
+  ctx.beginPath();D.river.forEach(function(p,i){var X=sx(p[0],w),Y=sy(p[1],h);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+  ctx.strokeStyle=water;ctx.lineWidth=5;ctx.lineJoin="round";ctx.stroke();
+  D.routes.forEach(function(r){
+    ctx.beginPath();r.pts.forEach(function(p,i){var X=sx(p[0],w),Y=sy(p[1],h);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.strokeStyle=ink2;
+    if(r.type==="highway"){ctx.setLineDash([]);ctx.lineWidth=2.6;}
+    else if(r.type==="secondary"){ctx.setLineDash([]);ctx.lineWidth=1.4;}
+    else if(r.type==="winter"){ctx.setLineDash([7,5]);ctx.lineWidth=1.8;}
+    else {ctx.setLineDash([2,5]);ctx.lineWidth=1.2;}
+    ctx.stroke();ctx.setLineDash([]);
+  });
+  ctx.font="11px system-ui,sans-serif";ctx.textBaseline="middle";
+  D.hubs.forEach(function(hb){var X=sx(hb.x,w),Y=sy(hb.y,h);ctx.fillStyle=ink2;ctx.fillRect(X-4,Y-4,8,8);ctx.fillText(hb.name,X+8,Y);});
+  var ids={}; list.forEach(function(c){ids[c.id]=1;});
+  hit=[];
+  C.forEach(function(c){
+    var X=sx(c.x,w),Y=sy(c.y,h),r=radius(c.pop),on=!!ids[c.id],v=c.s[state.dom];
+    ctx.globalAlpha=on?1:0.18;
+    ctx.beginPath();ctx.arc(X,Y,r,0,6.2832);ctx.fillStyle=css(BCOL[bandOf(v)]);ctx.fill();
+    ctx.lineWidth=state.sel===c.id?3:1.5;ctx.strokeStyle=state.sel===c.id?css("--ink"):surf;ctx.stroke();
+    if(c.adv&&c.adv.days>=365){ctx.beginPath();ctx.arc(X,Y,r+4,0,6.2832);ctx.lineWidth=2;ctx.strokeStyle=warn;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);}
+    ctx.globalAlpha=1;
+    if(on&&(!NARROW||state.sel===c.id)){ctx.fillStyle=css("--ink");ctx.textAlign="left";ctx.fillText(c.name,X+r+(c.adv&&c.adv.days>=365?7:4),Y-1);}
+    if(on)hit.push({id:c.id,x:X,y:Y,r:r+5});
+  });
+}
+function renderLegend(){
+  $("legend").innerHTML=BANDS.map(function(b,i){return '<span><i class="sw" style="background:var('+BCOL[i]+')"></i>'+b+' ('+BRANGE[i]+')</span>';}).join("")+
+   '<span><i class="sw" style="border:2px dashed var(--warnink);background:transparent"></i>Advisory 12 months or longer</span>'+
+   '<span><i class="ln"></i>All-season road</span><span><i class="ln" style="border-top-style:dashed"></i>Winter road</span><span><i class="ln" style="border-top-style:dotted"></i>Air link</span>';
+}
+function hitAt(e){var rc=cvs.getBoundingClientRect(),x=e.clientX-rc.left,y=e.clientY-rc.top;
+  for(var i=hit.length-1;i>=0;i--){var d=hit[i];if(Math.pow(x-d.x,2)+Math.pow(y-d.y,2)<=d.r*d.r)return {h:d,x:x,y:y};}return null;}
+cvs.addEventListener("mousemove",function(e){var m=hitAt(e),tip=$("tip");
+  if(!m){tip.hidden=true;return;}var c=byId[m.h.id];
+  tip.innerHTML="<b>"+esc(c.name)+"</b><br>"+DNAME[state.dom]+": "+fmt(c.s[state.dom])+" · "+BANDS[bandOf(c.s[state.dom])]+"<br>"+fmt(c.pop)+" people · "+c.access;
+  tip.hidden=false;var wd=cvs.clientWidth;tip.style.left=Math.min(m.x+12,wd-250)+"px";tip.style.top=Math.max(4,m.y-10)+"px";});
+cvs.addEventListener("mouseleave",function(){$("tip").hidden=true;});
+cvs.addEventListener("click",function(e){var m=hitAt(e);if(m){state.sel=m.h.id;renderAll();}});
+cvs.addEventListener("keydown",function(e){
+  if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;e.preventDefault();
+  var l=filtered().slice().sort(function(a,b){return a.x-b.x;});if(!l.length)return;
+  var i=l.map(function(c){return c.id;}).indexOf(state.sel);i=i<0?0:(i+(e.key==="ArrowRight"?1:-1)+l.length)%l.length;state.sel=l[i].id;renderAll();});
+
+/* detail */
+function renderDetail(){
+  var c=byId[state.sel]; if(!c){$("detail").innerHTML='<p class="note">Select a community on the map or in the list.</p>';return;}
+  var ov=c.s.overall;
+  var rows=["water","access","power","bb","housing"].map(function(k){var v=c.s[k];
+    return '<div class="brow"><span>'+DNAME[k]+'</span><span class="track"><span class="fill" style="display:block;width:'+v+'%;background:var('+BCOL[bandOf(v)]+')"></span></span><span class="num">'+fmt(v)+'</span></div>';}).join("");
+  var adv=c.adv?(ADVN[c.adv.type]+", active "+fmt(c.adv.days)+" days"):"No active advisory";
+  var facts=[["Water",c.sys+" system · plant condition "+c.plant+" of 5 · "+(c.op?"certified operator":"no certified operator")+" · "+adv],
+             ["Access",c.access+" · route condition "+c.road+" of 5 · "+fmt(c.dist)+" km from the regional hub"],
+             ["Power",(c.power==="Grid"?"Grid supply":"Diesel generation")+" · "+c.outage+" outage hours a year"],
+             ["Broadband",BBN[c.bb]],
+             ["Housing",c.repair+"% need major repairs · "+c.crowd+"% crowded"]];
+  $("detail").innerHTML='<div class="dtitle"><div><h3>'+esc(c.name)+'</h3><p class="note">'+fmt(c.pop)+' people · '+c.access+'</p></div><div><div class="bigscore">'+fmt(ov)+'</div><div class="band">'+dot(ov)+' '+BANDS[bandOf(ov)]+'</div></div></div>'+
+   '<div class="bars">'+rows+'</div><dl class="facts">'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+esc(f[1])+'</dd>';}).join("")+'</dl>'+
+   '<div class="step"><b>Next step · '+DNAME[c.weakest]+' · '+c.status+'</b>'+esc(c.step)+'</div>';
+}
+
+/* list */
+function renderList(list){
+  var k=state.dom, sorted=list.slice().sort(function(a,b){return a.s[k]-b.s[k];});
+  $("listNote").textContent="Lowest "+DNAME[k].toLowerCase()+" score first. Select a row for detail.";
+  $("rankTitle").textContent=DNAME[k]+" ranking";
+  $("rows").innerHTML=sorted.map(function(c){var v=c.s[k];
+    return '<tr class="tr'+(state.sel===c.id?' sel':'')+'" tabindex="0" data-id="'+c.id+'"><td>'+esc(c.name)+'</td><td class="r">'+fmt(c.pop)+'</td><td class="r"><span class="pill">'+dot(v)+fmt(v)+'</span></td><td>'+DNAME[c.weakest]+'</td><td class="nx">'+esc(c.step)+'</td><td>'+c.status+'</td></tr>';}).join("");
+}
+function pick(e){var tr=e.target.closest(".tr");if(!tr)return;if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;e.preventDefault();state.sel=tr.dataset.id;renderAll();}
+$("rows").addEventListener("click",pick);$("rows").addEventListener("keydown",pick);
+
+/* charts */
+var charts={};
+function mk(id,cfg){if(typeof Chart==="undefined"){var b=$(id).parentNode;if(!b.dataset.err){b.dataset.err=1;b.insertAdjacentHTML("beforeend",'<p class="note">The chart library could not load. Check your connection and reload.</p>');}return;}
+  if(charts[id]){charts[id].destroy();}charts[id]=new Chart($(id),cfg);}
+function chartBase(){var ink2=css("--ink2"),grid=css("--grid");Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';Chart.defaults.font.size=12;Chart.defaults.color=ink2;return {ink2:ink2,grid:grid};}
+function renderCharts(list){
+  if(typeof Chart==="undefined"){["c1","c2","c3"].forEach(function(i){mk(i,{});});return;}
+  var cb=chartBase();
+  /* trend */
+  var any=[],lng=[];
+  for(var m=0;m<24;m++){var a=0,l=0;list.forEach(function(c){var st=null;c.events.forEach(function(e){if(e[0]<=m&&(e[1]===null||m<e[1]))st=e[0];});if(st!==null){a++;if(m-st>=12)l++;}});any.push(a);lng.push(l);}
+  mk("c1",{type:"line",data:{labels:D.months,datasets:[
+    {label:"Any active advisory",data:any,borderColor:css("--c1"),backgroundColor:css("--c1"),borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:0,stepped:true},
+    {label:"Active 12 months or more",data:lng,borderColor:css("--c2"),backgroundColor:css("--c2"),borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:0,stepped:true}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:6,maxRotation:0}},y:{beginAtZero:true,ticks:{precision:0},grid:{color:cb.grid},title:{display:true,text:"Communities"}}},
+      plugins:{legend:{position:"bottom",labels:{boxWidth:14,boxHeight:3}}}}});
+  /* bands */
+  var keys=["water","access","power","bb","housing"], counts=[0,1,2,3].map(function(b){return keys.map(function(k){return list.filter(function(c){return bandOf(c.s[k])===b;}).length;});});
+  mk("c2",{type:"bar",data:{labels:keys.map(function(k){return DNAME[k];}),datasets:BANDS.map(function(b,i){return {label:b,data:counts[i],backgroundColor:css(BCOL[i]),borderWidth:0};})},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      scales:{x:{stacked:true,beginAtZero:true,max:Math.max(1,list.length),ticks:{precision:0},grid:{color:cb.grid},title:{display:true,text:"Communities"}},y:{stacked:true,grid:{display:false}}},
+      plugins:{legend:{position:"bottom",labels:{boxWidth:12,boxHeight:12}}}}});
+  /* ranking with 70 line */
+  var k=state.dom,s=list.slice().sort(function(a,b){return b.s[k]-a.s[k];});
+  var line={id:"t70",afterDatasetsDraw:function(ch){var x=ch.scales.x.getPixelForValue(70),a=ch.chartArea,g=ch.ctx;g.save();g.beginPath();g.moveTo(x,a.top);g.lineTo(x,a.bottom);g.lineWidth=2;g.strokeStyle=css("--ink");g.stroke();g.restore();}};
+  mk("c3",{type:"bar",plugins:[line],data:{labels:s.map(function(c){return c.name;}),datasets:[{data:s.map(function(c){return +c.s[k].toFixed(1);}),backgroundColor:s.map(function(c){return css(BCOL[bandOf(c.s[k])]);}),borderWidth:0}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,onClick:function(ev,els){if(els.length){state.sel=s[els[0].index].id;renderAll();}},
+      scales:{x:{min:0,max:100,grid:{color:cb.grid},title:{display:true,text:"Score out of 100"}},y:{grid:{display:false},ticks:{autoSkip:false,font:{size:11}}}},
+      plugins:{legend:{display:false}}}});
+}
+
+function renderAll(){
+  var list=filtered();
+  if(!state.sel||!list.some(function(c){return c.id===state.sel;})){var w=list.slice().sort(function(a,b){return a.s.overall-b.s.overall;})[0];state.sel=w?w.id:null;}
+  $("mapTitle").textContent=DNAME[state.dom]+" readiness across the region";
+  renderKpis(list);renderLegend();drawMap(list);renderDetail();renderList(list);renderCharts(list);
+}
+var rt=null;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){drawMap(filtered());},120);});
+if(window.matchMedia){try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){renderAll();});}catch(e){}}
+buildControls();renderAll();
+})();
+</script>
+</body>
+</html>

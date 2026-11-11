@@ -63,6 +63,8 @@ nav {
   border-radius: 3px; cursor: pointer; transition: all 0.2s;
 }
 .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
+@media(max-width:1600px){ nav { padding: 0 20px; } .logo { font-size: 20px; letter-spacing: 2px; } .nav-links { gap: 0; } .nav-links button { padding: 8px 9px; letter-spacing: 1px; } .nav-cta { padding: 10px 14px; white-space: nowrap; } }
+@media(max-width:1250px){ .logo { font-size: 17px; letter-spacing: 1px; } .nav-links button { padding: 8px 6px; font-size: 11px; letter-spacing: .5px; } .nav-cta { padding: 9px 10px; font-size: 11px; } }
 @media(max-width:1400px){ nav { padding: 0 20px; } .logo { font-size: 20px; letter-spacing: 2px; } .nav-links { gap: 0; } .nav-links button { padding: 8px 9px; letter-spacing: 1px; } .nav-cta { padding: 10px 14px; white-space: nowrap; } }
 
 /* ── PAGE CONTAINER ── */
@@ -552,6 +554,39 @@ footer {
 /* Utility */
 .gold { color: var(--gold); }
 .mt-40 { margin-top: 40px; }
+
+/* ── Spacing and empty-cell fixes ── */
+.hero { min-height: 82vh; padding: 110px 40px 56px; }
+.section { padding: 64px 40px; }
+.page-hero { padding: 120px 40px 48px; }
+.detail-grid { gap: 48px; padding: 56px 40px; align-items: start; }
+.case-strip { padding: 56px 40px; }
+.about-grid { gap: 56px; padding: 56px 40px; }
+.cta-band { padding-top: 64px; padding-bottom: 64px; }
+.services-grid { grid-template-columns: repeat(6, 1fr); }
+.services-grid > .service-card { grid-column: span 2; }
+.services-grid > .service-card:nth-child(n+4) { grid-column: span 3; }
+.projects-grid { margin-bottom: 56px !important; }
+@media(max-width:1320px){
+  nav { height: auto; flex-wrap: wrap; padding: 10px 20px; row-gap: 6px; }
+  .nav-links { display: flex; order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links button { white-space: nowrap; flex: none; padding: 8px 12px; font-size: 12px; letter-spacing: 1px; }
+  .hero, .page-hero { padding-top: 130px; }
+}
+@media(max-width:900px){
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  .services-grid > .service-card, .services-grid > .service-card:nth-child(n+4) { grid-column: span 1; }
+  .services-grid > .service-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .hero, .page-hero { padding-top: 130px; }
+}
+@media(max-width:900px){ .case-grid { grid-template-columns: repeat(2, 1fr); } .case-grid > .case-card:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media(max-width:600px){ .case-grid { grid-template-columns: 1fr; } .case-grid > .case-card:last-child:nth-child(odd) { grid-column: auto; } }
+@media(max-width:768px){
+  .section, .detail-grid, .about-grid, .case-strip, .page-hero { padding-left: 20px; padding-right: 20px; }
+  .detail-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+@media(max-width:500px){ .services-grid { grid-template-columns: 1fr; } .services-grid > .service-card:last-child:nth-child(odd) { grid-column: auto; } .hero { min-height: auto; } }
 </style>
 </head>
 <body>
@@ -567,6 +602,7 @@ footer {
     <button onclick="showPage('environmental')" id="nav-environmental">Environmental</button>
     <button onclick="showPage('municipal')" id="nav-municipal">Municipal</button>
     <button onclick="showPage('drone')" id="nav-drone">Drone</button>
+    <button onclick="showPage('agriculture')" id="nav-agriculture">Agriculture</button>
     <button onclick="showPage('projects')" id="nav-projects">Projects</button>
     <button onclick="showPage('portfolio')" id="nav-portfolio">Portfolio</button>
     <button onclick="showPage('about')" id="nav-about">About</button>
@@ -638,6 +674,13 @@ footer {
         <div class="svc-icon">🚁</div>
         <div class="svc-title">Drone Mapping</div>
         <p class="svc-desc">TC Advanced RPAS-certified aerial surveys delivering orthomosaics, point clouds, and 3D terrain models.</p>
+        <span class="svc-arrow">Explore →</span>
+      </div>
+      <div class="service-card" onclick="showPage('agriculture')">
+        <div class="svc-num">05 /</div>
+        <div class="svc-icon">🌾</div>
+        <div class="svc-title">Precision Agriculture</div>
+        <p class="svc-desc">Crop and range monitoring, management zones, drainage and wetland mapping, and weed hotspot analysis for farms and ranches.</p>
         <span class="svc-arrow">Explore →</span>
       </div>
     </div>
@@ -912,6 +955,74 @@ footer {
   </div>
 </div>
 
+<!-- ════════════════════ AGRICULTURE ════════════════════ -->
+<div id="agriculture" class="page">
+  <div class="page-hero">
+    <p class="section-tag">// 05 — Precision Agriculture</p>
+    <h1>GIS for Farms<br>&amp; Ranches</h1>
+    <p>Field-level spatial intelligence for producers, ranchers and agronomy teams: see crop and range condition, target inputs, manage water and habitat, and document the results.</p>
+  </div>
+  <div class="detail-grid">
+    <div class="detail-block">
+      <h3>Core Capabilities</h3>
+      <ul>
+        <li>Crop health and stress monitoring from satellite and drone imagery (NDVI)</li>
+        <li>Field boundary, land cover and rangeland mapping, updated on a schedule</li>
+        <li>Management zones and variable-rate prescription maps</li>
+        <li>Soil, moisture and drought stress analysis</li>
+        <li>Drainage, wetland and riparian mapping from LiDAR and DEMs</li>
+        <li>Watershed, runoff and flow-path analysis for fields and pastures</li>
+        <li>Wildfire, flood and erosion risk mapping for farm and ranch operations</li>
+        <li>Pasture and grazing planning: carrying capacity, rotation and water points</li>
+        <li>Invasive weed hotspot analysis and spread forecasting</li>
+        <li>Wildlife habitat and corridor mapping for stewardship programs</li>
+        <li>Field data collection (Survey123, QField) and farm data cleanup into one geodatabase</li>
+        <li>Dashboards and web maps for owners, agronomists and lenders</li>
+        <li>Drone (RPAS) surveys: orthomosaics, vegetation maps and repeat monitoring</li>
+        <li>Carbon and ecosystem service estimates, and program or grant reporting</li>
+      </ul>
+    </div>
+    <div class="detail-block">
+      <h3>Technologies</h3>
+      <div class="tech-tags">
+        <span class="tech-tag">ArcGIS Pro</span>
+        <span class="tech-tag">Spatial Analyst</span>
+        <span class="tech-tag">Remote Sensing</span>
+        <span class="tech-tag">Sentinel-2 / Landsat</span>
+        <span class="tech-tag">LiDAR Processing</span>
+        <span class="tech-tag">QGIS</span>
+        <span class="tech-tag">Python / NumPy</span>
+        <span class="tech-tag">Survey123 / QField</span>
+        <span class="tech-tag">ArcGIS Online</span>
+        <span class="tech-tag">Drone Photogrammetry</span>
+      </div>
+    </div>
+  </div>
+  <div class="case-strip">
+    <div class="inner">
+      <p class="section-tag">// See It In Action</p>
+      <h2 class="section-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">Interactive Demos</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <h4>Prairie Crop Stress Monitor</h4>
+          <p>Weekly greenness for quarter-section fields, with a season slider that flags fields falling behind others growing the same crop. Synthetic data.</p>
+          <div class="case-outcome"><a href="crop-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+        </div>
+        <div class="case-card">
+          <h4>Invasive Plant Hotspot Explorer</h4>
+          <p>Hotspot and clustering analysis of a plot survey, showing where invasive plants concentrate and how sure the result is. Synthetic data.</p>
+          <div class="case-outcome"><a href="hotspot-explorer.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+        </div>
+        <div class="case-card">
+          <h4>Site Condition Monitor</h4>
+          <p>Wetland, stream and vegetation condition across monitored sites, with NDVI trends and field observations. Synthetic data.</p>
+          <div class="case-outcome"><a href="site-condition-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════ PROJECTS ════════════════════ -->
 <div id="projects" class="page">
   <div class="page-hero">
@@ -970,6 +1081,55 @@ footer {
       <p>Wetland, stream and vegetation condition across monitored sites, with NDVI trends and field observations.</p>
       <div class="proj-tags"><span class="proj-tag">Leaflet</span><span class="proj-tag">NDVI</span><span class="proj-tag">Chart.js</span></div>
       <div class="proj-outcome"><a href="site-condition-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Municipal · Interactive demo</div>
+      <h3>Community Infrastructure Readiness</h3>
+      <p>Fictional communities scored on water, access, power, broadband and housing, with a priority list of next steps. Built to show how a community-owned planning tool could work.</p>
+      <div class="proj-tags"><span class="proj-tag">Canvas map</span><span class="proj-tag">Scoring index</span><span class="proj-tag">Chart.js</span></div>
+      <div class="proj-outcome"><a href="infrastructure-readiness.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Engineering · Interactive demo</div>
+      <h3>Substation Site Suitability</h3>
+      <p>Weighted-overlay screening of ten candidate sites for a new substation, with live priority sliders, hard-limit exclusions and a test of how stable the winning site is. Synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">Raster analysis</span><span class="proj-tag">Weighted overlay</span><span class="proj-tag">Sensitivity test</span></div>
+      <div class="proj-outcome"><a href="site-suitability.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Environmental · Interactive demo</div>
+      <h3>Invasive Plant Hotspot Explorer</h3>
+      <p>Spatial statistics on a plot survey: Moran's I, Getis-Ord hotspots, multiple-testing correction and a pattern-free control, with a distance slider that shows how results depend on the choices made. Synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">Moran's I</span><span class="proj-tag">Getis-Ord Gi*</span><span class="proj-tag">FDR</span></div>
+      <div class="proj-outcome"><a href="hotspot-explorer.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Municipal · Interactive demo</div>
+      <h3>Municipal Asset Register</h3>
+      <p>Asset inventory for a fictional county: condition map, data-quality gaps, and a 30-year replacement forecast with funding scenarios that show how the backlog changes. Synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">Asset management</span><span class="proj-tag">Lifecycle forecast</span><span class="proj-tag">Data quality</span></div>
+      <div class="proj-outcome"><a href="asset-register.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Agriculture · Interactive demo</div>
+      <h3>Prairie Crop Stress Monitor</h3>
+      <p>Weekly greenness for quarter-section fields, with a season slider that flags fields falling behind others growing the same crop and shows whether the pattern looks like weather, soil or management. Synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">NDVI time series</span><span class="proj-tag">Anomaly detection</span><span class="proj-tag">Precision ag</span></div>
+      <div class="proj-outcome"><a href="crop-monitor.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Regulatory · Interactive demo</div>
+      <h3>Setback and Permit Screening</h3>
+      <p>Place a proposed building on a lot and see rule by rule whether it meets zoning setbacks and distances to a creek, floodplain, pipeline and wellsites, with a finder for a compliant position. Invented rules and synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">Setbacks</span><span class="proj-tag">Overlay analysis</span><span class="proj-tag">Permit screening</span></div>
+      <div class="proj-outcome"><a href="setback-screening.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-cat">Transportation · Interactive demo</div>
+      <h3>Fleet Dispatch and Route Planner</h3>
+      <p>A fictional regional carrier's day: choose loads, trucks and start time, and the planner assigns loads to trucks and sequences stops against customer time windows and driver hours, then compares cost with a plan made in load-number order. Synthetic data.</p>
+      <div class="proj-tags"><span class="proj-tag">Routing</span><span class="proj-tag">Network analysis</span><span class="proj-tag">Dispatch planning</span></div>
+      <div class="proj-outcome"><a href="fleet-dispatch.html" target="_blank" rel="noopener" style="color:inherit">Open the demo →</a></div>
     </div>
   </div>
 </div>
@@ -1057,7 +1217,7 @@ footer {
     <div class="footer-top">
       <div class="footer-brand">
         <div class="logo">MIDSPAN<span style="color:var(--gold)">·</span>GEOSPATIAL</div>
-        <p>Calgary-based GIS consultancy serving Western Canada's utility, environmental, and municipal sectors.</p>
+        <p>Calgary-based GIS consultancy serving Western Canada's utility, environmental, municipal, and agricultural sectors.</p>
       </div>
       <div class="footer-col">
         <h5>Services</h5>
@@ -1066,6 +1226,7 @@ footer {
           <li onclick="showPage('environmental')">Environmental GIS</li>
           <li onclick="showPage('municipal')">Municipal GIS</li>
           <li onclick="showPage('drone')">Drone Mapping</li>
+          <li onclick="showPage('agriculture')">Precision Agriculture</li>
         </ul>
       </div>
       <div class="footer-col">
@@ -1111,6 +1272,7 @@ footer {
         <option>Environmental GIS</option>
         <option>Municipal GIS</option>
         <option>Drone Mapping & Survey</option>
+        <option>Precision Agriculture GIS</option>
         <option>Other / General Inquiry</option>
       </select>
     </div>
@@ -1125,7 +1287,7 @@ footer {
 
 <script>
 // ── NAV ──
-const pages = ['home','utilities','environmental','municipal','drone','projects','portfolio','about'];
+const pages = ['home','utilities','environmental','municipal','drone','agriculture','projects','portfolio','about'];
 
 function showPage(id) {
   pages.forEach(p => {
@@ -1134,6 +1296,7 @@ function showPage(id) {
     if(btn) btn.classList.toggle('active', p === id);
   });
   window.scrollTo({top: 0, behavior: 'smooth'});
+  if (typeof fillGridGaps === 'function') fillGridGaps();
 }
 
 // ── MODAL ──
@@ -1198,6 +1361,7 @@ function renderProjects(filter='all') {
       <div class="proj-outcome">→ ${p.outcome}</div>
     </div>
   `).join('');
+  if (typeof fillGridGaps === 'function') fillGridGaps();
 }
 
 function filterProjects(cat, btn) {
@@ -1207,6 +1371,21 @@ function filterProjects(cat, btn) {
 }
 
 renderProjects();
+// ── Fill the last row of card grids so no empty cells show ──
+function fillGridGaps() {
+  document.querySelectorAll('.projects-grid').forEach(grid => {
+    const cards = Array.from(grid.children);
+    cards.forEach(c => c.style.gridColumn = '');
+    if (!cards.length || grid.offsetParent === null) return;
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    const rem = cards.length % cols;
+    if (!rem) return;
+    const base = Math.floor(cols / rem), extra = cols % rem;
+    cards.slice(-rem).forEach((c, i) => c.style.gridColumn = 'span ' + (base + (i >= rem - extra ? 1 : 0)));
+  });
+}
+window.addEventListener('resize', fillGridGaps);
+fillGridGaps();
 </script>
 </body>
 </html>

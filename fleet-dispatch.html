@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fleet Dispatch and Route Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+html,body{margin:0}
+/* Layout: five summary tiles, then the road map with a truck table and a day timeline, beside the controls, a plain-language reading, the selected truck's stops and the load list.
+   Palette: warm neutrals; five categorical hues for trucks (always paired with a truck name and stop numbers); red only for late or unassigned. */
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.12); --onc1:#ffffff;
+  --c1:#2a78d6; --okink:#1e7a3c; --warnink:#b3261e; --hwy:#bdbbb0; --sec:#d3d1c6; --loc:#e1e0d9; --tint:#ece9df;
+  --t1:#2a78d6; --t2:#eb6834; --t3:#1aa6a6; --t4:#7a5bd0; --t5:#c79a2b;
+  --tipbg:#0b0b0b; --tipfg:#fcfcfb; --sys:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.12); --onc1:#0b0b0b;
+    --c1:#3987e5; --okink:#6fcf8c; --warnink:#f08a80; --hwy:#5a5953; --sec:#45443f; --loc:#33322f; --tint:#242422;
+    --t1:#4a95ee; --t2:#f0703c; --t3:#3cc4c4; --t4:#9b7ee8; --t5:#d4a93f;
+    --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.12); --onc1:#0b0b0b;
+  --c1:#3987e5; --okink:#6fcf8c; --warnink:#f08a80; --hwy:#5a5953; --sec:#45443f; --loc:#33322f; --tint:#242422;
+  --t1:#4a95ee; --t2:#f0703c; --t3:#3cc4c4; --t4:#9b7ee8; --t5:#d4a93f;
+  --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sys);font-size:14px;line-height:1.45;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.app>*,.main>*,.col>*{min-width:0;max-width:100%}
+h1,h2,h3,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(24px,4.4vw,32px);line-height:1.15;font-weight:650;text-wrap:balance}
+.sub{color:var(--ink2);margin-top:4px;max-width:76ch}
+.demo{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--axis);color:var(--ink2);border-radius:999px;padding:4px 10px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px;min-width:0}
+.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}
+h2{font-size:15px;font-weight:650}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+button,select,input{font:inherit;color:var(--ink)}
+.chip:focus-visible,.seg button:focus-visible,.tr:focus-visible,canvas:focus-visible,input:focus-visible,.lrow:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);border:0;border-right:1px solid var(--axis);padding:5px 10px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--c1);color:var(--onc1);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:1px solid var(--axis);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{background:var(--c1);border-color:var(--c1);color:var(--onc1)}
+.chip[aria-pressed="false"]{opacity:.8}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.main{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mapwrap{position:relative;border:1px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--plane)}
+canvas{display:block;width:100%;height:auto}
+canvas#map{cursor:pointer}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:12px;padding:6px 9px;border-radius:6px;max-width:250px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sq{display:inline-block;width:14px;height:12px;border-radius:2px;flex:none;border:1px solid var(--ring)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.ctl{display:flex;flex-direction:column;gap:12px}
+.ctl label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink2)}
+.ctl label span{display:flex;justify-content:space-between;gap:10px}
+.ctl label b{color:var(--ink);font-variant-numeric:tabular-nums}
+.ctl input[type=range]{width:100%;accent-color:var(--c1);margin:0}
+.read h3{font-size:16px;font-weight:650;margin-bottom:6px}
+.read ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:13px;display:flex;flex-direction:column;gap:5px}
+.read b{color:var(--ink)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.r{text-align:right} th.r{text-align:right}
+td.r,td.nw{white-space:nowrap}
+.tr{cursor:pointer}
+.tr:hover td,.tr.sel td{background:var(--plane)}
+.tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--c1)}
+.tr.off td{opacity:.5}
+.bad{color:var(--warnink);font-weight:600}
+.ok{color:var(--okink)}
+.lrows{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.lrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--axis);border-radius:8px;padding:7px 9px;cursor:pointer}
+.lrow[aria-pressed="false"]{opacity:.55}
+.lrow .bx{width:16px;height:16px;border:2px solid var(--axis);border-radius:4px;display:grid;place-items:center;font-size:12px;line-height:1}
+.lrow[aria-pressed="true"] .bx{background:var(--c1);border-color:var(--c1);color:var(--onc1)}
+.lrow small{display:block;color:var(--muted);font-size:11.5px}
+.lrow .w{font-size:12px;color:var(--ink2);white-space:nowrap;text-align:right}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-width:96ch}
+@media (max-width:960px){.main{display:flex;flex-direction:column;align-items:stretch}.col{display:contents}.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}.o7{order:7}}
+@media (max-width:560px){th,td{padding:6px 4px}table{font-size:12.5px}.nx{display:none}.kpi:last-child:nth-child(odd){grid-column:1 / -1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Midspan Geospatial Ltd · Transportation and logistics</p>
+      <h1>Fleet Dispatch and Route Planner</h1>
+      <p class="sub">A fictional regional carrier has loads to deliver today. Choose the loads, trucks and start time and the planner assigns loads to trucks and sequences the stops against customer time windows and driver hours, then compares the result with a plan made in load-number order.</p>
+    </div>
+    <span class="demo">Fictional carrier · synthetic data</span>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Summary indicators"></section>
+
+  <section class="main">
+    <div class="col">
+      <article class="card o1">
+        <div class="cardhead"><div><h2>Routes on the road network</h2><p class="note">Numbers show the stop order. Select a truck in the table, or select a customer with a load to include or drop it.</p></div></div>
+        <div class="mapwrap"><canvas id="map" width="1000" height="667" role="img" aria-label="Map of a fictional road network with the yard, customer towns and each truck's route" tabindex="0"></canvas><div class="tip" id="tip" hidden></div></div>
+        <div class="legend" id="legend"></div>
+      </article>
+      <article class="card o4">
+        <div class="cardhead"><div><h2>Trucks</h2><p class="note">Select a row to highlight a truck on the map and see its stops.</p></div></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Truck</th><th class="r">Stops</th><th class="r">Load</th><th class="r">Distance</th><th class="r">On duty</th><th class="r nx">Cost</th></tr></thead>
+            <tbody id="trows"></tbody>
+          </table>
+        </div>
+      </article>
+      <article class="card o5">
+        <h2>The day by truck</h2>
+        <p class="note">Loading at the yard, driving, waiting for a window to open, unloading, and the return. The vertical mark is the 14 hour on-duty limit.</p>
+        <canvas id="tl" width="1000" height="300" role="img" aria-label="Timeline of each truck's day showing driving, waiting and unloading" style="margin-top:8px"></canvas>
+        <div class="legend" id="tlegend"></div>
+      </article>
+    </div>
+
+    <div class="col">
+      <article class="card o2">
+        <h2>Today's setup</h2>
+        <div class="ctl" style="margin-top:10px">
+          <div><p class="note" style="margin:0 0 6px">Trucks available</p><div class="chips" id="tchips" role="group" aria-label="Trucks available"></div></div>
+          <label><span>Shift start <b id="vS"></b></span><input type="range" id="rngS" min="300" max="540" step="30" aria-label="Shift start time"></label>
+          <div><div class="chips"><button type="button" class="chip" id="soft" aria-pressed="false">Allow late deliveries</button></div><p class="note" style="margin-top:6px">Off: a load is only planned if it can arrive inside its window. On: late arrivals are allowed at a $1.50 per minute penalty.</p></div>
+        </div>
+      </article>
+      <article class="card read o3" id="read" aria-live="polite"></article>
+      <article class="card o6">
+        <h2 id="sTitle">Stops</h2>
+        <p class="note" id="sNote"></p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>#</th><th>Customer</th><th class="r">Arrive</th><th class="r nx">Window</th><th>Status</th></tr></thead>
+            <tbody id="srows"></tbody>
+          </table>
+        </div>
+      </article>
+      <article class="card o7">
+        <div class="cardhead" style="margin-bottom:0"><div><h2>Loads today</h2><p class="note">Select a load to include or drop it.</p></div><div class="seg" id="segAll"><button type="button" data-a="all">All</button><button type="button" data-a="none">None</button></div></div>
+        <div class="lrows" id="lrows"></div>
+      </article>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>The carrier, towns, roads, loads and rates are invented for demonstration. Costs are illustrative ($/km by truck type, $38 an hour for the driver, $120 for each truck used). The 13 hour driving and 14 hour on-duty limits are simplified and are not legal advice. A real system would add truck-specific road restrictions, live traffic, driver rest rules, pickup stops and returns, and customer service calendars.</p>
+    <p>Method: road distances and times come from shortest paths over the network, using 100, 80 and 60 km/h on highways, secondary and local roads. Each truck loads 30 minutes at the yard, serves its stops in order and returns. The planner inserts each load where it adds the least cost, then improves the plan by moving loads between trucks and reversing parts of routes until no change helps. The load-number plan gives each load, in order, to the truck carrying the least weight so far, and serves stops in that order.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = {"w":300.0,"h":200.0,"nodes":[{"n":"Harlan Yard","x":118.0,"y":98.0,"t":"depot"},{"n":"Aspen Ford","x":14.1,"y":173.2,"t":"customer"},{"n":"Birchmont","x":89.8,"y":146.0,"t":"customer"},{"n":"Cinder Lake","x":132.4,"y":27.5,"t":"customer"},{"n":"Dunmore Flats","x":20.5,"y":48.0,"t":"customer"},{"n":"Elk Hollow","x":235.0,"y":63.0,"t":"customer"},{"n":"Fairhaven Cross","x":185.0,"y":41.3,"t":"customer"},{"n":"Garnet Ridge","x":143.0,"y":113.7,"t":"customer"},{"n":"Hollis Bend","x":67.6,"y":70.9,"t":"customer"},{"n":"Ironwood","x":78.8,"y":20.1,"t":"customer"},{"n":"Juniper Rise","x":102.0,"y":184.8,"t":"customer"},{"n":"Kestrel Point","x":195.9,"y":169.5,"t":"customer"},{"n":"Larch Valley","x":28.8,"y":79.1,"t":"customer"},{"n":"Marl Creek","x":185.0,"y":94.5,"t":"customer"},{"n":"Northgate","x":80.9,"y":123.4,"t":"customer"},{"n":"Oxbow","x":46.9,"y":25.4,"t":"customer"},{"n":"Pinecrest Junction","x":158.3,"y":52.1,"t":"customer"},{"n":"Quarry Hill","x":211.4,"y":31.2,"t":"customer"},{"n":"Redfern","x":276.0,"y":91.2,"t":"customer"},{"n":"Saddle Butte","x":168.9,"y":181.2,"t":"customer"},{"n":"Thornbury","x":122.3,"y":57.6,"t":"customer"},{"n":"Umber Flats","x":107.3,"y":16.4,"t":"customer"},{"n":"Vesper","x":283.8,"y":65.4,"t":"customer"},{"n":"Wren Landing","x":203.0,"y":78.1,"t":"customer"},{"n":"Yarrow","x":254.1,"y":108.6,"t":"customer"},{"n":"J1","x":249.9,"y":141.6,"t":"junction"},{"n":"J2","x":34.6,"y":105.9,"t":"junction"},{"n":"J3","x":147.1,"y":145.9,"t":"junction"},{"n":"J4","x":125.7,"y":75.0,"t":"junction"},{"n":"J5","x":287.1,"y":156.3,"t":"junction"},{"n":"J6","x":20.1,"y":129.0,"t":"junction"},{"n":"J7","x":111.9,"y":139.5,"t":"junction"},{"n":"J8","x":273.5,"y":191.8,"t":"junction"},{"n":"J9","x":155.8,"y":12.6,"t":"junction"},{"n":"J10","x":149.4,"y":179.4,"t":"junction"}],"roads":[{"a":20,"b":28,"km":19.9,"cls":"sec"},{"a":19,"b":34,"km":21.9,"cls":"hwy"},{"a":2,"b":31,"km":25.8,"cls":"sec"},{"a":0,"b":28,"km":27.2,"cls":"hwy"},{"a":2,"b":14,"km":27.2,"cls":"hwy"},{"a":13,"b":23,"km":27.3,"cls":"loc"},{"a":18,"b":22,"km":30.2,"cls":"hwy"},{"a":26,"b":30,"km":30.5,"cls":"loc"},{"a":12,"b":26,"km":30.7,"cls":"loc"},{"a":3,"b":21,"km":30.7,"cls":"loc"},{"a":3,"b":33,"km":31.1,"cls":"sec"},{"a":18,"b":24,"km":31.3,"cls":"sec"},{"a":6,"b":17,"km":31.7,"cls":"sec"},{"a":9,"b":21,"km":32.2,"cls":"sec"},{"a":6,"b":16,"km":32.3,"cls":"sec"},{"a":11,"b":19,"km":33.0,"cls":"sec"},{"a":0,"b":7,"km":33.1,"cls":"sec"},{"a":3,"b":20,"km":35.6,"cls":"sec"},{"a":4,"b":12,"km":36.1,"cls":"hwy"},{"a":9,"b":15,"km":36.2,"cls":"hwy"},{"a":7,"b":27,"km":36.4,"cls":"loc"},{"a":24,"b":25,"km":37.3,"cls":"loc"},{"a":27,"b":34,"km":37.6,"cls":"sec"},{"a":4,"b":15,"km":38.9,"cls":"sec"},{"a":14,"b":31,"km":39.1,"cls":"hwy"},{"a":5,"b":23,"km":39.6,"cls":"sec"},{"a":3,"b":16,"km":40.0,"cls":"loc"},{"a":27,"b":31,"km":40.1,"cls":"hwy"},{"a":16,"b":20,"km":40.8,"cls":"hwy"},{"a":29,"b":32,"km":42.6,"cls":"loc"},{"a":16,"b":33,"km":44.3,"cls":"loc"},{"a":5,"b":17,"km":44.4,"cls":"sec"},{"a":8,"b":12,"km":44.4,"cls":"sec"},{"a":16,"b":28,"km":44.6,"cls":"sec"},{"a":25,"b":29,"km":44.8,"cls":"sec"},{"a":7,"b":31,"km":45.3,"cls":"loc"},{"a":0,"b":20,"km":45.5,"cls":"sec"},{"a":2,"b":10,"km":45.6,"cls":"hwy"},{"a":6,"b":33,"km":45.9,"cls":"hwy"},{"a":6,"b":23,"km":45.9,"cls":"sec"},{"a":19,"b":27,"km":46.5,"cls":"hwy"},{"a":0,"b":31,"km":47.0,"cls":"hwy"},{"a":7,"b":28,"km":47.5,"cls":"sec"},{"a":20,"b":21,"km":49.1,"cls":"hwy"},{"a":1,"b":30,"km":50.0,"cls":"hwy"},{"a":0,"b":14,"km":50.4,"cls":"hwy"},{"a":7,"b":13,"km":51.7,"cls":"hwy"},{"a":10,"b":31,"km":51.9,"cls":"hwy"},{"a":17,"b":23,"km":53.4,"cls":"hwy"},{"a":10,"b":34,"km":53.4,"cls":"hwy"},{"a":8,"b":26,"km":53.9,"cls":"hwy"},{"a":21,"b":33,"km":54.5,"cls":"hwy"},{"a":5,"b":22,"km":54.7,"cls":"hwy"},{"a":5,"b":24,"km":55.4,"cls":"hwy"},{"a":14,"b":26,"km":55.4,"cls":"hwy"},{"a":5,"b":18,"km":55.7,"cls":"hwy"},{"a":8,"b":15,"km":56.0,"cls":"hwy"},{"a":13,"b":16,"km":56.1,"cls":"hwy"},{"a":12,"b":30,"km":56.7,"cls":"hwy"},{"a":16,"b":23,"km":57.9,"cls":"hwy"},{"a":8,"b":9,"km":58.3,"cls":"hwy"},{"a":4,"b":8,"km":58.7,"cls":"hwy"},{"a":8,"b":14,"km":60.7,"cls":"hwy"},{"a":11,"b":27,"km":60.7,"cls":"hwy"},{"a":31,"b":34,"km":61.3,"cls":"hwy"},{"a":25,"b":32,"km":62.1,"cls":"hwy"},{"a":18,"b":25,"km":63.6,"cls":"hwy"},{"a":9,"b":20,"km":64.3,"cls":"hwy"},{"a":17,"b":33,"km":65.7,"cls":"hwy"},{"a":5,"b":13,"km":66.2,"cls":"hwy"},{"a":11,"b":25,"km":68.1,"cls":"hwy"},{"a":14,"b":30,"km":68.4,"cls":"hwy"},{"a":10,"b":14,"km":72.7,"cls":"hwy"},{"a":18,"b":29,"km":74.0,"cls":"hwy"},{"a":10,"b":19,"km":75.0,"cls":"hwy"},{"a":11,"b":13,"km":84.9,"cls":"hwy"},{"a":17,"b":22,"km":89.7,"cls":"hwy"},{"a":11,"b":32,"km":90.4,"cls":"hwy"},{"a":1,"b":14,"km":93.3,"cls":"hwy"},{"a":1,"b":10,"km":99.3,"cls":"hwy"},{"a":22,"b":29,"km":101.9,"cls":"hwy"}],"speed":{"hwy":100.0,"sec":80.0,"loc":60.0},"trucks":[{"id":"T1","name":"Tractor 1","cap":30.0,"rate":1.85,"lper100":38.0},{"id":"T2","name":"Tractor 2","cap":30.0,"rate":1.85,"lper100":38.0},{"id":"T3","name":"Tractor 3","cap":30.0,"rate":1.85,"lper100":38.0},{"id":"T4","name":"Straight 4","cap":15.0,"rate":1.3,"lper100":26.0},{"id":"T5","name":"Straight 5","cap":15.0,"rate":1.3,"lper100":26.0}],"cost":{"wage":38.0,"fixed":120.0,"latepen":1.5,"loadmin":30,"maxdrive":780,"maxduty":840,"co2":2.68,"start":360},"loads":[{"id":"LD-101","c":1,"wt":3.0,"sv":35,"win":"AM","e":420,"l":720,"fr":"Drywall"},{"id":"LD-102","c":2,"wt":7.0,"sv":35,"win":"AM","e":420,"l":720,"fr":"Steel stock"},{"id":"LD-103","c":3,"wt":6.0,"sv":35,"win":"AM","e":420,"l":720,"fr":"Roofing"},{"id":"LD-104","c":6,"wt":7.0,"sv":25,"win":"PM","e":780,"l":1080,"fr":"Steel stock"},{"id":"LD-105","c":8,"wt":10.0,"sv":25,"win":"AM","e":420,"l":720,"fr":"Lumber"},{"id":"LD-106","c":10,"wt":10.0,"sv":35,"win":"ANY","e":420,"l":1080,"fr":"Farm parts"},{"id":"LD-107","c":13,"wt":10.0,"sv":25,"win":"AM","e":420,"l":720,"fr":"Farm parts"},{"id":"LD-108","c":14,"wt":3.0,"sv":35,"win":"ANY","e":420,"l":1080,"fr":"Lumber"},{"id":"LD-109","c":15,"wt":3.0,"sv":20,"win":"AM","e":420,"l":720,"fr":"Feed"},{"id":"LD-110","c":16,"wt":9.0,"sv":50,"win":"ANY","e":420,"l":1080,"fr":"Aggregate"},{"id":"LD-111","c":17,"wt":5.0,"sv":30,"win":"ANY","e":420,"l":1080,"fr":"Pipe"},{"id":"LD-112","c":18,"wt":5.0,"sv":40,"win":"ANY","e":420,"l":1080,"fr":"Pipe"},{"id":"LD-113","c":21,"wt":3.0,"sv":20,"win":"AM","e":420,"l":720,"fr":"Fertilizer"},{"id":"LD-114","c":22,"wt":9.0,"sv":30,"win":"AM","e":420,"l":720,"fr":"Fuel drums"},{"id":"LD-115","c":23,"wt":4.0,"sv":50,"win":"AM","e":420,"l":720,"fr":"Pipe"},{"id":"LD-116","c":24,"wt":10.0,"sv":50,"win":"PM","e":780,"l":1080,"fr":"Packaged goods"}],"win":{"AM":[420,720],"MID":[600,900],"PM":[780,1080],"ANY":[420,1080]},"chk":{"mk":[[0.0,143.7,77.6,82.7,169.8,151.0,104.1,33.1,111.1,111.4,98.9,147.8,136.5,84.8,50.4,147.6,71.8,135.8,206.7,130.2,47.1,96.2,205.7,112.1,206.4,215.9,105.8,87.1,27.2,260.7,118.8,47.0,238.2,113.8,108.3],[143.7,0.0,120.5,226.4,142.8,294.7,247.8,176.8,154.0,212.3,99.3,207.3,106.7,228.5,93.3,181.7,215.5,279.5,339.0,174.3,190.8,239.9,349.4,255.8,312.7,275.4,80.5,172.5,170.9,320.2,50.0,132.4,297.7,257.5,152.7],[77.6,120.5,0.0,160.3,146.6,189.0,181.7,71.1,87.9,146.2,45.6,126.6,113.3,122.8,27.2,143.9,149.4,213.4,258.3,109.0,124.7,173.8,243.7,150.1,232.0,194.7,82.6,65.9,104.8,239.5,95.6,25.8,217.0,191.4,87.1],[82.7,226.4,160.3,0.0,138.0,141.2,77.0,103.0,121.2,62.9,181.6,181.0,165.6,96.1,133.1,99.1,40.0,96.8,196.9,212.9,35.6,30.7,186.5,97.9,196.6,249.1,188.5,169.8,55.5,270.9,201.5,129.7,271.4,31.1,191.0],[169.8,142.8,146.6,138.0,0.0,277.7,207.7,202.9,58.7,75.1,192.1,259.3,36.1,236.3,119.4,38.9,180.2,227.5,333.4,241.7,139.4,107.3,317.2,238.1,333.1,327.4,66.8,198.6,159.3,372.2,92.8,158.5,349.7,161.8,219.8],[151.0,294.7,189.0,141.2,277.7,0.0,76.1,117.9,262.1,202.6,215.1,151.1,287.5,66.2,201.4,238.8,97.5,44.4,55.7,184.1,138.3,164.6,54.7,39.6,55.4,92.7,256.8,154.3,142.1,129.7,269.8,163.2,154.8,110.1,206.0],[104.1,247.8,181.7,77.0,207.7,76.1,0.0,140.1,190.9,132.6,203.0,173.3,235.3,88.4,154.5,168.8,32.3,31.7,131.8,206.3,73.1,100.4,121.4,45.9,131.5,168.8,209.9,176.5,76.9,205.8,222.9,151.1,263.7,45.9,212.4],[33.1,176.8,71.1,103.0,202.9,117.9,140.1,0.0,144.2,131.7,97.2,97.1,169.6,51.7,83.5,167.9,107.8,132.4,173.6,82.9,67.4,116.5,172.6,79.0,173.3,165.2,138.9,36.4,47.5,210.0,151.9,45.3,187.5,134.1,74.0],[111.1,154.0,87.9,121.2,58.7,262.1,190.9,144.2,0.0,58.3,133.4,200.6,44.4,195.9,60.7,56.0,163.4,210.7,317.8,183.0,122.6,90.5,300.4,221.3,317.5,268.7,53.9,139.9,138.3,313.5,84.4,99.8,291.0,145.0,161.1],[111.4,212.3,146.2,62.9,75.1,202.6,132.6,131.7,58.3,0.0,191.7,246.1,102.7,161.2,119.0,36.2,105.1,152.4,258.3,241.3,64.3,32.2,242.1,163.0,258.0,314.2,112.2,198.2,84.2,332.3,142.7,158.1,336.5,86.7,219.4],[98.9,99.3,45.6,181.6,192.1,215.1,203.0,97.2,133.4,191.7,0.0,108.0,158.8,148.9,72.7,189.4,170.7,234.7,239.7,75.0,146.0,195.1,269.9,176.2,213.4,176.1,128.1,92.0,126.1,220.9,141.1,51.9,198.4,212.7,53.4],[147.8,207.3,126.6,181.0,259.3,151.1,173.3,97.1,200.6,246.1,108.0,0.0,226.0,84.9,139.9,256.6,141.0,165.6,131.7,33.0,181.8,230.9,161.9,112.2,105.4,68.1,195.3,60.7,175.0,112.9,208.3,100.8,90.4,185.3,54.9],[136.5,106.7,113.3,165.6,36.1,287.5,235.3,169.6,44.4,102.7,158.8,226.0,0.0,221.3,86.1,75.0,207.8,255.1,343.2,208.4,167.0,134.9,344.8,265.7,342.9,294.1,30.7,165.3,163.7,338.9,56.7,125.2,316.4,189.4,186.5],[84.8,228.5,122.8,96.1,236.3,66.2,88.4,51.7,195.9,161.2,148.9,84.9,221.3,0.0,135.2,197.4,56.1,80.7,121.9,117.9,96.9,146.0,120.9,27.3,121.6,153.0,190.6,88.1,99.2,195.9,203.6,97.0,175.3,100.4,139.8],[50.4,93.3,27.2,133.1,119.4,201.4,154.5,83.5,60.7,119.0,72.7,139.9,86.1,135.2,0.0,116.7,122.2,186.2,257.1,122.3,97.5,146.6,256.1,162.5,256.8,208.0,55.4,79.2,77.6,252.8,68.4,39.1,230.3,164.2,100.4],[147.6,181.7,143.9,99.1,38.9,238.8,168.8,167.9,56.0,36.2,189.4,256.6,75.0,197.4,116.7,0.0,141.3,188.6,294.5,239.0,100.5,68.4,278.3,199.2,294.2,324.7,109.9,195.9,120.4,368.5,131.7,155.8,347.0,122.9,217.1],[71.8,215.5,149.4,40.0,180.2,97.5,32.3,107.8,163.4,105.1,170.7,141.0,207.8,56.1,122.2,141.3,0.0,64.0,153.2,174.0,40.8,89.9,152.2,57.9,152.9,209.1,177.6,144.2,44.6,227.2,190.6,118.8,231.4,44.3,180.1],[135.8,279.5,213.4,96.8,227.5,44.4,31.7,132.4,210.7,152.4,234.7,165.6,255.1,80.7,186.2,188.6,64.0,0.0,100.1,198.6,104.8,120.2,89.7,53.4,99.8,137.1,241.6,168.8,108.6,174.1,254.6,182.8,199.2,65.7,220.5],[206.7,339.0,258.3,196.9,333.4,55.7,131.8,173.6,317.8,258.3,239.7,131.7,343.2,121.9,257.1,294.5,153.2,100.1,0.0,164.7,194.0,220.3,30.2,95.3,31.3,63.6,312.5,192.4,197.8,74.0,325.5,232.5,125.7,165.8,186.6],[130.2,174.3,109.0,212.9,241.7,184.1,206.3,82.9,183.0,241.3,75.0,33.0,208.4,117.9,122.3,239.0,174.0,198.6,164.7,0.0,177.3,226.4,194.9,145.2,138.4,101.1,177.7,46.5,157.4,145.9,190.7,83.2,123.4,218.3,21.9],[47.1,190.8,124.7,35.6,139.4,138.3,73.1,67.4,122.6,64.3,146.0,181.8,167.0,96.9,97.5,100.5,40.8,104.8,194.0,177.3,0.0,49.1,193.0,98.7,193.7,249.9,152.9,134.2,19.9,268.0,165.9,94.1,272.2,66.7,155.4],[96.2,239.9,173.8,30.7,107.3,164.6,100.4,116.5,90.5,32.2,195.1,230.9,134.9,146.0,146.6,68.4,89.9,120.2,220.3,226.4,49.1,0.0,209.9,147.8,220.0,257.3,144.4,183.3,69.0,294.3,174.9,143.2,321.3,54.5,204.5],[205.7,349.4,243.7,186.5,317.2,54.7,121.4,172.6,300.4,242.1,269.9,161.9,344.8,120.9,256.1,278.3,152.2,89.7,30.2,194.9,193.0,209.9,0.0,94.3,61.5,93.8,311.5,222.6,196.8,101.9,324.5,217.9,155.9,155.4,216.8],[112.1,255.8,150.1,97.9,238.1,39.6,45.9,79.0,221.3,163.0,176.2,112.2,265.7,27.3,162.5,199.2,57.9,53.4,95.3,145.2,98.7,147.8,94.3,0.0,95.0,132.3,217.9,115.4,102.5,169.3,230.9,124.3,202.6,91.8,167.1],[206.4,312.7,232.0,196.6,333.1,55.4,131.5,173.3,317.5,258.0,213.4,105.4,342.9,121.6,256.8,294.2,152.9,99.8,31.3,138.4,193.7,220.0,61.5,95.0,0.0,37.3,312.2,166.1,197.5,105.3,325.2,206.2,99.4,165.5,160.3]],"mt":[[0.0,86.22,46.56,57.945,101.88,95.565,73.995,24.825,66.66,69.825,59.34,88.68,94.18,55.845,30.24,91.545,49.77,97.77,128.985,78.12,31.245,60.705,128.385,83.145,128.805,129.54,63.48,52.26,16.32,163.14,71.28,28.2,142.92,81.27,64.98],[86.22,0.0,72.3,144.165,85.68,181.785,160.215,111.045,92.4,127.38,59.58,129.33,64.02,142.065,55.98,114.855,135.99,183.99,208.35,104.58,117.465,146.925,214.605,169.365,207.49,170.19,60.5,103.5,102.54,203.79,30.0,79.44,183.57,167.49,91.62],[46.56,72.3,0.0,104.505,87.96,135.39,120.555,64.65,52.74,87.72,27.36,79.83,80.26,95.67,16.32,86.34,96.33,144.33,158.85,69.27,77.805,107.265,168.21,122.97,157.99,120.69,49.56,43.41,62.88,154.29,57.36,19.35,134.07,127.83,56.13],[57.945,144.165,104.505,0.0,105.745,96.045,50.865,77.25,89.83,54.85,117.285,124.6,123.13,73.66,88.185,76.57,40.0,62.745,129.465,136.065,26.7,30.7,116.565,74.74,129.285,165.46,121.425,110.205,41.625,173.865,129.225,86.145,178.84,23.325,122.925],[101.88,85.68,87.96,105.745,0.0,178.395,135.285,126.705,35.22,50.895,115.26,155.58,21.66,147.615,71.64,29.175,113.955,147.165,211.815,145.02,89.475,75.045,200.985,148.695,211.635,196.44,52.36,119.16,104.4,230.04,55.68,95.1,209.82,107.745,131.88],[95.565,181.785,135.39,96.045,178.395,0.0,57.075,70.74,162.225,127.5,147.18,90.66,189.745,39.72,125.805,149.22,64.44,33.3,33.42,115.41,88.92,105.42,32.82,29.7,33.24,70.54,159.045,107.14,97.89,77.82,166.845,116.04,107.8,72.72,128.55],[73.995,160.215,120.555,50.865,135.285,57.075,0.0,88.905,119.37,84.39,133.335,108.825,152.67,57.885,104.235,106.11,24.225,23.775,90.495,133.575,48.705,60.24,77.595,34.425,90.315,127.615,137.475,125.305,57.675,134.895,145.275,102.195,163.065,27.54,138.975],[24.825,111.045,64.65,77.25,126.705,70.74,88.905,0.0,91.485,89.13,76.44,72.82,119.005,31.02,55.065,110.85,64.68,90.36,104.16,64.3,50.55,80.01,103.56,58.32,103.98,113.68,88.305,36.4,35.625,147.28,96.105,45.3,127.06,100.575,64.6],[66.66,92.4,52.74,89.83,35.22,162.225,119.37,91.485,0.0,34.98,80.04,120.36,33.3,122.505,36.42,33.6,98.04,131.25,195.645,109.8,73.56,59.13,185.07,132.78,195.465,161.22,32.34,83.94,82.98,194.82,62.84,59.88,174.6,91.83,96.66],[69.825,127.38,87.72,54.85,50.895,127.5,84.39,89.13,34.98,0.0,115.02,147.66,68.28,96.72,71.4,21.72,63.06,96.27,160.92,144.78,38.58,24.15,150.09,97.8,160.74,188.52,67.32,118.92,53.505,205.32,97.82,94.86,201.9,56.85,131.64],[59.34,59.58,27.36,117.285,115.26,147.18,133.335,76.44,80.04,115.02,0.0,69.75,107.56,107.46,43.62,113.64,109.11,157.11,148.77,45.0,90.585,120.045,166.89,134.76,147.91,110.61,76.86,55.2,75.66,144.21,84.66,31.14,123.99,140.61,32.04],[88.68,129.33,79.83,124.6,155.58,90.66,108.825,72.82,120.36,147.66,69.75,0.0,147.88,50.94,83.94,153.96,84.6,110.28,79.02,24.75,109.08,138.54,97.14,78.24,78.16,40.86,117.18,36.42,105.0,74.46,124.98,60.48,54.24,128.9,37.89],[94.18,64.02,80.26,123.13,21.66,189.745,152.67,119.005,33.3,68.28,107.56,147.88,0.0,150.025,63.94,50.835,131.34,164.55,223.165,137.32,106.86,92.43,218.37,166.08,222.985,188.74,30.7,111.46,110.5,222.34,34.02,87.4,202.12,125.13,124.18],[55.845,142.065,95.67,73.66,147.615,39.72,57.885,31.02,122.505,96.72,107.46,50.94,150.025,0.0,86.085,118.44,33.66,59.34,73.14,75.69,58.14,87.6,72.54,27.3,72.96,91.8,119.325,67.42,66.645,117.54,127.125,76.32,105.18,77.96,88.83],[30.24,55.98,16.32,88.185,71.64,125.805,104.235,55.065,36.42,71.4,43.62,83.94,63.94,86.085,0.0,70.02,80.01,128.01,159.225,73.38,61.485,90.945,158.625,113.385,159.045,124.8,33.24,47.52,46.56,158.4,41.04,23.46,138.18,111.51,60.24],[91.545,114.855,86.34,76.57,29.175,149.22,106.11,110.85,33.6,21.72,113.64,153.96,50.835,118.44,70.02,0.0,84.78,117.99,182.64,143.4,60.3,45.87,171.81,119.52,182.46,194.82,65.94,117.54,75.225,227.04,84.855,93.48,208.2,78.57,130.26],[49.77,135.99,96.33,40.0,113.955,64.44,24.225,64.68,98.04,63.06,109.11,84.6,131.34,33.66,80.01,84.78,0.0,48.0,97.86,109.35,24.48,53.94,97.26,34.74,97.68,125.46,113.25,101.08,33.45,142.26,121.05,77.97,138.84,44.3,114.75],[97.77,183.99,144.33,62.745,147.165,33.3,23.775,90.36,131.25,96.27,157.11,110.28,164.55,59.34,128.01,117.99,48.0,0.0,66.72,135.03,72.48,72.12,53.82,32.04,66.54,103.84,161.25,126.76,81.45,111.12,169.05,125.97,141.1,39.42,148.17],[128.985,208.35,158.85,129.465,211.815,33.42,90.495,104.16,195.645,160.92,148.77,79.02,223.165,73.14,159.225,182.64,97.86,66.72,0.0,103.77,122.34,138.84,18.12,63.12,23.475,38.16,192.465,115.44,131.31,44.4,200.265,139.5,75.42,106.14,116.91],[78.12,104.58,69.27,136.065,145.02,115.41,133.575,64.3,109.8,144.78,45.0,24.75,137.32,75.69,73.38,143.4,109.35,135.03,103.77,0.0,109.365,138.825,121.89,102.99,102.91,65.61,106.62,27.9,94.44,99.21,114.42,49.92,78.99,153.65,13.14],[31.245,117.465,77.805,26.7,89.475,88.92,48.705,50.55,73.56,38.58,90.585,109.08,106.86,58.14,61.485,60.3,24.48,72.48,122.34,109.365,0.0,29.46,121.74,59.22,122.16,149.94,94.725,83.505,14.925,166.74,102.525,59.445,163.32,50.025,96.225],[60.705,146.925,107.265,30.7,75.045,105.42,60.24,80.01,59.13,24.15,120.045,138.54,92.43,87.6,90.945,45.87,53.94,72.12,138.84,138.825,29.46,0.0,125.94,88.68,138.66,175.96,91.47,112.965,44.385,183.24,121.97,88.905,192.78,32.7,125.685],[128.385,214.605,168.21,116.565,200.985,32.82,77.595,103.56,185.07,150.09,166.89,97.14,218.37,72.54,158.625,171.81,97.26,53.82,18.12,121.89,121.74,125.94,0.0,62.52,41.595,56.28,191.865,133.56,130.71,61.14,199.665,148.86,93.54,93.24,135.03],[83.145,169.365,122.97,74.74,148.695,29.7,34.425,58.32,132.78,97.8,134.76,78.24,166.08,27.3,113.385,119.52,34.74,32.04,63.12,102.99,59.22,88.68,62.52,0.0,62.94,100.24,146.625,94.72,68.19,107.52,154.425,103.62,132.48,61.965,116.13],[128.805,207.49,157.99,129.285,211.635,33.24,90.315,103.98,195.465,160.74,147.91,78.16,222.985,72.96,159.045,182.46,97.68,66.54,23.475,102.91,122.16,138.66,41.595,62.94,0.0,37.3,192.285,114.58,131.13,67.875,200.085,138.64,74.56,105.96,116.05]],"tests":[{"order":[7,10,0,12],"truck":4,"start":300,"ref":{"km":852.2,"drive":549.87,"duty":759.63,"late":335.925,"wait":59.76,"wt":14.0,"cost":1708.959,"arr":[360.24,583.01,797.0,978.925]}},{"order":[9,5],"truck":0,"start":300,"ref":{"km":341.4,"drive":218.22,"duty":373.45,"late":0.0,"wait":40.23,"wt":19.0,"cost":988.1083,"arr":[379.77,579.11]}},{"order":[0],"truck":0,"start":480,"ref":{"km":287.4,"drive":172.44,"duty":237.44,"late":0.0,"wait":0.0,"wt":3.0,"cost":802.0687,"arr":[596.22]}},{"order":[10],"truck":3,"start":300,"ref":{"km":271.6,"drive":195.54,"duty":255.54,"late":0.0,"wait":0.0,"wt":5.0,"cost":634.922,"arr":[427.77]}},{"order":[6,4],"truck":0,"start":480,"ref":{"km":391.8,"drive":245.01,"duty":325.01,"late":0.0,"wait":0.0,"wt":20.0,"cost":1050.6697,"arr":[565.845,713.35]}},{"order":[10,5,15,1],"truck":3,"start":300,"ref":{"km":893.5,"drive":607.34,"duty":787.34,"late":285.78,"wait":0.0,"wt":32.0,"cost":1780.1987,"arr":[427.77,614.88,797.79,1005.78]}},{"order":[5,3,11,14,6],"truck":0,"start":480,"ref":{"km":641.1,"drive":429.435,"duty":676.76,"late":634.53,"wait":42.325,"wt":36.0,"cost":1734.6497,"arr":[569.34,737.675,895.495,998.615,1075.915]}},{"order":[3,8],"truck":4,"start":480,"ref":{"km":420.5,"drive":271.65,"duty":542.655,"late":191.11,"wait":196.005,"wt":10.0,"cost":1010.3315,"arr":[583.995,911.11]}},{"order":[0,12],"truck":3,"start":300,"ref":{"km":479.8,"drive":293.85,"duty":382.63,"late":0.0,"wait":3.78,"wt":6.0,"cost":986.0723,"arr":[416.22,601.925]}},{"order":[8],"truck":1,"start":360,"ref":{"km":295.2,"drive":183.09,"duty":233.09,"late":0.0,"wait":0.0,"wt":3.0,"cost":813.7437,"arr":[481.545]}},{"order":[14,4,12,6,2],"truck":1,"start":420,"ref":{"km":748.7,"drive":494.26,"duty":679.26,"late":554.025,"wait":0.0,"wt":33.0,"cost":1935.293,"arr":[533.145,715.925,800.055,907.655,1006.315]}},{"order":[2,6,12],"truck":0,"start":360,"ref":{"km":421.0,"drive":279.91,"duty":389.91,"late":0.0,"wait":0.0,"wt":19.0,"cost":1145.793,"arr":[447.945,556.605,669.205]}},{"order":[12],"truck":2,"start":420,"ref":{"km":192.4,"drive":121.41,"duty":171.41,"late":0.0,"wait":0.0,"wt":3.0,"cost":584.4997,"arr":[510.705]}},{"order":[15,7],"truck":3,"start":300,"ref":{"km":513.6,"drive":318.09,"duty":754.285,"late":0.0,"wait":321.195,"wt":13.0,"cost":1265.3938,"arr":[458.805,989.045]}},{"order":[15,13],"truck":4,"start":480,"ref":{"km":473.6,"drive":298.785,"duty":549.98,"late":151.595,"wait":141.195,"wt":19.0,"cost":1084.0007,"arr":[638.805,871.595]}},{"order":[14,5,15],"truck":1,"start":480,"ref":{"km":708.1,"drive":494.62,"duty":659.62,"late":0.0,"wait":0.0,"wt":24.0,"cost":1847.7443,"arr":[593.145,777.905,960.815]}},{"order":[10,8],"truck":1,"start":420,"ref":{"km":472.0,"drive":307.305,"duty":387.305,"late":0.0,"wait":0.0,"wt":8.0,"cost":1238.4932,"arr":[547.77,695.76]}},{"order":[10],"truck":4,"start":420,"ref":{"km":271.6,"drive":195.54,"duty":255.54,"late":0.0,"wait":0.0,"wt":5.0,"cost":634.922,"arr":[547.77]}},{"order":[5,6,13,3],"truck":0,"start":420,"ref":{"km":594.2,"drive":390.93,"duty":535.93,"late":29.34,"wait":0.0,"wt":36.0,"cost":1558.6923,"arr":[509.34,651.8,749.34,856.935]}},{"order":[12,5,4,15,7],"truck":0,"start":480,"ref":{"km":1049.4,"drive":645.54,"duty":840.54,"late":281.09,"wait":0.0,"wt":36.0,"cost":2593.732,"arr":[570.705,710.75,825.79,1046.255,1255.3]}},{"order":[15,0,9,1,4],"truck":3,"start":420,"ref":{"km":1083.0,"drive":688.015,"duty":1114.21,"late":1803.33,"wait":201.195,"wt":39.0,"cost":2233.5663,"arr":[578.805,1037.49,1208.48,1354.81,1442.55]}},{"order":[1,12],"truck":1,"start":420,"ref":{"km":347.6,"drive":214.53,"duty":299.53,"late":0.0,"wait":0.0,"wt":10.0,"cost":952.7623,"arr":[496.56,638.825]}},{"order":[11,6,14],"truck":3,"start":360,"ref":{"km":468.0,"drive":312.57,"duty":457.57,"late":0.0,"wait":0.0,"wt":19.0,"cost":1018.1943,"arr":[518.985,632.125,684.425]}},{"order":[6,4,12,10],"truck":3,"start":360,"ref":{"km":627.2,"drive":407.37,"duty":537.37,"late":0.0,"wait":0.0,"wt":28.0,"cost":1275.6943,"arr":[445.845,593.35,677.48,769.6]}},{"order":[9,15],"truck":3,"start":480,"ref":{"km":431.1,"drive":276.255,"duty":478.805,"late":0.0,"wait":72.55,"wt":19.0,"cost":983.6732,"arr":[559.77,707.45]}},{"order":[15,4,14],"truck":4,"start":480,"ref":{"km":857.3,"drive":540.195,"duty":836.39,"late":768.71,"wait":141.195,"wt":24.0,"cost":1764.2037,"arr":[638.805,1025.465,1183.245]}},{"order":[2],"truck":3,"start":360,"ref":{"km":165.4,"drive":115.89,"duty":180.89,"late":0.0,"wait":0.0,"wt":6.0,"cost":449.5837,"arr":[447.945]}},{"order":[1,3],"truck":4,"start":480,"ref":{"km":363.4,"drive":241.11,"duty":398.995,"late":0.0,"wait":67.885,"wt":14.0,"cost":845.1168,"arr":[556.56,712.115]}},{"order":[4,1,8],"truck":2,"start":360,"ref":{"km":490.5,"drive":297.285,"duty":407.285,"late":0.0,"wait":0.0,"wt":20.0,"cost":1285.3722,"arr":[456.66,534.4,655.74]}},{"order":[7,10,1],"truck":3,"start":360,"ref":{"km":527.6,"drive":349.14,"duty":479.14,"late":37.58,"wait":0.0,"wt":15.0,"cost":1109.3353,"arr":[420.24,583.25,757.58]}},{"order":[4,6,0],"truck":3,"start":300,"ref":{"km":679.2,"drive":417.45,"duty":555.79,"late":14.57,"wait":23.34,"wt":23.0,"cost":1354.9603,"arr":[396.66,567.505,734.57]}},{"order":[3,13,4,7],"truck":1,"start":360,"ref":{"km":637.0,"drive":403.32,"duty":864.325,"late":619.345,"wait":316.005,"wt":29.0,"cost":1845.8558,"arr":[463.995,882.595,1097.665,1159.085]}},{"order":[10],"truck":1,"start":480,"ref":{"km":271.6,"drive":195.54,"duty":255.54,"late":0.0,"wait":0.0,"wt":5.0,"cost":784.302,"arr":[607.77]}},{"order":[5,0],"truck":2,"start":360,"ref":{"km":341.9,"drive":205.14,"duty":305.14,"late":0.0,"wait":0.0,"wt":13.0,"cost":945.7703,"arr":[449.34,543.92]}},{"order":[7,15,8,10,12],"truck":2,"start":300,"ref":{"km":1006.4,"drive":622.56,"duty":1033.275,"late":895.48,"wait":225.715,"wt":24.0,"cost":2636.2475,"arr":[360.24,614.045,1012.46,1150.45,1252.57]}},{"order":[2,4,11,0],"truck":1,"start":300,"ref":{"km":1004.4,"drive":637.99,"duty":835.045,"late":293.825,"wait":32.055,"wt":24.0,"cost":2507.0018,"arr":[387.945,544.83,765.475,1013.825]}},{"order":[8,2,15,12,14],"truck":3,"start":360,"ref":{"km":923.2,"drive":607.885,"duty":850.485,"late":606.0,"wait":37.6,"wt":26.0,"cost":1858.8005,"arr":[481.545,578.115,742.4,968.66,1077.34]}},{"order":[10,2],"truck":2,"start":480,"ref":{"km":315.3,"drive":218.46,"duty":313.46,"late":0.0,"wait":0.0,"wt":11.0,"cost":901.8297,"arr":[607.77,700.515]}},{"order":[5,13],"truck":0,"start":360,"ref":{"km":574.5,"drive":354.615,"duty":449.615,"late":0.0,"wait":0.0,"wt":19.0,"cost":1467.5812,"arr":[449.34,651.23]}},{"order":[13],"truck":2,"start":300,"ref":{"km":411.4,"drive":256.77,"duty":316.77,"late":0.0,"wait":0.0,"wt":9.0,"cost":1081.711,"arr":[458.385]}}]}};
+if(!D){return;}
+var $=function(id){return document.getElementById(id);};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var fmt=function(n,d){d=d||0;return Number(n).toLocaleString("en-CA",{minimumFractionDigits:d,maximumFractionDigits:d});};
+var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+var hm=function(m){m=Math.round(m);return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");};
+var money=function(v){return "$"+fmt(v,0);};
+
+/*SOLVE-START*/
+function buildNet(D){
+  var N=D.nodes.length,adj=[],i;for(i=0;i<N;i++)adj.push([]);
+  D.roads.forEach(function(r){var t=r.km/D.speed[r.cls]*60;adj[r.a].push([r.b,r.km,t]);adj[r.b].push([r.a,r.km,t]);});
+  var mt=[],mk=[],pv=[];
+  for(var s=0;s<N;s++){var t=new Array(N).fill(Infinity),k=new Array(N).fill(Infinity),p=new Array(N).fill(-1),done=new Array(N).fill(false);t[s]=0;k[s]=0;
+    for(var it=0;it<N;it++){var u=-1,b=Infinity;for(i=0;i<N;i++)if(!done[i]&&t[i]<b){b=t[i];u=i;}if(u<0)break;done[u]=true;
+      adj[u].forEach(function(e){var v=e[0],nt=t[u]+e[2];if(nt<t[v]-1e-12){t[v]=nt;k[v]=k[u]+e[1];p[v]=u;}});}
+    mt.push(t);mk.push(k);pv.push(p);}
+  return {mt:mt,mk:mk,pv:pv};
+}
+function pathNodes(net,a,b){var p=[b],c=b;while(c!==a&&net.pv[a][c]>=0){c=net.pv[a][c];p.push(c);}return p.reverse();}
+function evalRoute(D,net,order,tIdx,start){
+  var tr=D.trucks[tIdx],C=D.cost,t=start+C.loadmin,pos=0,km=0,drive=0,late=0,wait=0,wt=0,stops=[],i;
+  for(i=0;i<order.length;i++){var L=D.loads[order[i]],c=L.c,dr=net.mt[pos][c];t+=dr;drive+=dr;km+=net.mk[pos][c];
+    var a=t,w=0,lt=0;if(t<L.e){w=L.e-t;t=L.e;}if(t>L.l)lt=t-L.l;wait+=w;late+=lt;wt+=L.wt;
+    stops.push({load:order[i],arrive:a,wait:w,late:lt,start:t,end:t+L.sv,drive:dr});t+=L.sv;pos=c;}
+  var back=0;if(order.length){back=net.mt[pos][0];t+=back;drive+=back;km+=net.mk[pos][0];}
+  var duty=order.length?t-start:0,cost=order.length?km*tr.rate+duty/60*C.wage+C.fixed:0;
+  return {order:order,stops:stops,km:km,drive:drive,duty:duty,late:late,wait:wait,wt:wt,cost:cost,back:back,end:t,
+    capOk:wt<=tr.cap+1e-9,hosOk:drive<=C.maxdrive+1e-9&&duty<=C.maxduty+1e-9};
+}
+function feasible(m,soft){return m.capOk&&m.hosOk&&(soft||m.late<=1e-9);}
+function objective(D,m,soft){return m.cost+(soft?m.late*D.cost.latepen:0);}
+function solve(D,net,loadIdx,truckIdx,start,soft){
+  var routes={},metr={},unassigned=[];truckIdx.forEach(function(t){routes[t]=[];metr[t]=evalRoute(D,net,[],t,start);});
+  var seq=loadIdx.slice().sort(function(a,b){return D.loads[a].l-D.loads[b].l||D.loads[a].e-D.loads[b].e||a-b;});
+  function tryInsert(li){var best=null;
+    truckIdx.forEach(function(t){for(var pos=0;pos<=routes[t].length;pos++){var r=routes[t].slice();r.splice(pos,0,li);var m=evalRoute(D,net,r,t,start);
+      if(feasible(m,soft)){var inc=objective(D,m,soft)-objective(D,metr[t],soft);if(!best||inc<best.inc-1e-9)best={t:t,r:r,m:m,inc:inc};}}});
+    if(best){routes[best.t]=best.r;metr[best.t]=best.m;return true;}return false;}
+  seq.forEach(function(li){if(!tryInsert(li))unassigned.push(li);});
+  for(var pass=0;pass<30;pass++){var improved=false;
+    // relocate a load to its best position on any truck
+    truckIdx.forEach(function(t1){for(var i=0;i<routes[t1].length;i++){var li=routes[t1][i],rem=routes[t1].slice();rem.splice(i,1);var m1=evalRoute(D,net,rem,t1,start);
+      var cur=objective(D,metr[t1],soft),bestD=-1e-6,bestMove=null;
+      truckIdx.forEach(function(t2){var base=t2===t1?rem:routes[t2];
+        for(var pos=0;pos<=base.length;pos++){var r=base.slice();r.splice(pos,0,li);var m2=evalRoute(D,net,r,t2,start);if(!feasible(m2,soft))continue;
+          var delta;if(t2===t1){delta=objective(D,m2,soft)-cur;}else{if(!feasible(m1,soft))continue;delta=objective(D,m1,soft)+objective(D,m2,soft)-cur-objective(D,metr[t2],soft);}
+          if(delta<bestD){bestD=delta;bestMove={t2:t2,r:r,m2:m2};}}});
+      if(bestMove){if(bestMove.t2===t1){routes[t1]=bestMove.r;metr[t1]=bestMove.m2;}else{routes[t1]=rem;metr[t1]=m1;routes[bestMove.t2]=bestMove.r;metr[bestMove.t2]=bestMove.m2;}improved=true;break;}}});
+    // 2-opt inside each route
+    truckIdx.forEach(function(t){var r0=routes[t];for(var i=0;i<r0.length-1;i++)for(var j=i+1;j<r0.length;j++){var r=r0.slice(0,i).concat(r0.slice(i,j+1).reverse(),r0.slice(j+1));var m=evalRoute(D,net,r,t,start);
+      if(feasible(m,soft)&&objective(D,m,soft)<objective(D,metr[t],soft)-1e-6){routes[t]=r;metr[t]=m;improved=true;return;}}});
+    // try loads that did not fit
+    var un=[];unassigned.forEach(function(li){if(tryInsert(li))improved=true;else un.push(li);});unassigned=un;
+    if(!improved)break;}
+  return {routes:routes,metrics:metr,unassigned:unassigned.sort(function(a,b){return a-b;}),trucks:truckIdx.slice()};
+}
+function baseline(D,net,loadIdx,truckIdx,start){
+  var routes={},wts={},un=[];truckIdx.forEach(function(t){routes[t]=[];wts[t]=0;});
+  loadIdx.slice().sort(function(a,b){return a-b;}).forEach(function(li){var best=-1;
+    truckIdx.forEach(function(t){if(wts[t]+D.loads[li].wt<=D.trucks[t].cap+1e-9&&(best<0||wts[t]<wts[best]-1e-9))best=t;});
+    if(best<0)un.push(li);else{routes[best].push(li);wts[best]+=D.loads[li].wt;}});
+  var metr={};truckIdx.forEach(function(t){metr[t]=evalRoute(D,net,routes[t],t,start);});
+  return {routes:routes,metrics:metr,unassigned:un,trucks:truckIdx.slice()};
+}
+function totals(D,plan){var o={km:0,cost:0,duty:0,delivered:0,onTime:0,late:0,trucksUsed:0,drive:0};
+  plan.trucks.forEach(function(t){var m=plan.metrics[t];if(!m.order.length)return;o.trucksUsed++;o.km+=m.km;o.cost+=m.cost;o.duty+=m.duty;o.drive+=m.drive;o.delivered+=m.order.length;
+    m.stops.forEach(function(s){if(s.late<=1e-9)o.onTime++;else o.late++;});});return o;}
+/*SOLVE-END*/
+
+var NODES=D.nodes,LOADS=D.loads,TR=D.trucks,TC=["--t1","--t2","--t3","--t4","--t5"];
+var net=buildNet(D);
+var loadAt={};LOADS.forEach(function(L,i){loadAt[L.c]=i;});
+var state={loads:LOADS.map(function(){return 1;}),trucks:TR.map(function(){return 1;}),start:D.cost.start,soft:0,sel:-1,hover:-1};
+var R=null;
+
+function chosenLoads(){var a=[];LOADS.forEach(function(_,i){if(state.loads[i])a.push(i);});return a;}
+function chosenTrucks(){var a=[];TR.forEach(function(_,i){if(state.trucks[i])a.push(i);});return a;}
+function build(){
+  $("tchips").innerHTML=TR.map(function(t,i){return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="'+!!state.trucks[i]+'"><i class="dot" style="background:var('+TC[i]+')"></i>'+t.name+' · '+t.cap+' t</button>';}).join("");
+  $("rngS").value=state.start;$("soft").setAttribute("aria-pressed",String(!!state.soft));
+  $("lrows").innerHTML=LOADS.map(function(L,i){return '<button type="button" class="lrow" data-i="'+i+'" aria-pressed="'+!!state.loads[i]+'"><span class="bx">'+(state.loads[i]?"✓":"")+'</span><span>'+esc(NODES[L.c].n)+' <small>'+L.id+' · '+esc(L.fr)+' · window '+hm(L.e)+' to '+hm(L.l)+'</small></span><span class="w">'+L.wt+' t</span></button>';}).join("");
+}
+$("tchips").addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;var i=+b.dataset.i;if(state.trucks[i]&&chosenTrucks().length===1)return;state.trucks[i]=state.trucks[i]?0:1;if(state.sel===i&&!state.trucks[i])state.sel=-1;build();renderAll();});
+$("lrows").addEventListener("click",function(e){var b=e.target.closest(".lrow");if(!b)return;var i=+b.dataset.i;state.loads[i]=state.loads[i]?0:1;build();renderAll();});
+$("segAll").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var v=b.dataset.a==="all"?1:0;state.loads=LOADS.map(function(){return v;});build();renderAll();});
+$("soft").addEventListener("click",function(){state.soft=state.soft?0:1;build();renderAll();});
+var pend=false;$("rngS").addEventListener("input",function(e){state.start=+e.target.value;$("vS").textContent=hm(state.start);if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;renderAll();});});
+
+function analyse(){
+  var li=chosenLoads(),ti=chosenTrucks(),plan=solve(D,net,li,ti,state.start,!!state.soft),base=baseline(D,net,li,ti,state.start);
+  var tp=totals(D,plan),tb=totals(D,base);
+  if(state.sel<0||!state.trucks[state.sel]||!plan.metrics[state.sel]||!plan.metrics[state.sel].order.length){state.sel=-1;ti.forEach(function(t){if(state.sel<0&&plan.metrics[t].order.length)state.sel=t;});}
+  R={li:li,ti:ti,plan:plan,base:base,tp:tp,tb:tb};
+}
+
+/* ---------- map ---------- */
+var cvs=$("map"),ctx=cvs.getContext("2d"),MW=700,MM=14;
+function sx(x){return MM+x/D.w*(MW-2*MM);}function sy(y){return MM+y/D.h*(MW*D.h/D.w-2*MM);}
+function owner(li){var o=-1;R.ti.forEach(function(t){if(R.plan.metrics[t].order.indexOf(li)>=0)o=t;});return o;}
+function draw(){
+  var w=cvs.clientWidth||700,dpr=window.devicePixelRatio||1,h=Math.round(w*D.h/D.w);MW=w;var narrow=w<560;
+  cvs.width=Math.round(w*dpr);cvs.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle=css("--plane");ctx.fillRect(0,0,w,h);ctx.lineCap="round";ctx.lineJoin="round";
+  var wd={hwy:3,sec:2,loc:1.3},cc={hwy:css("--hwy"),sec:css("--sec"),loc:css("--loc")};
+  ["loc","sec","hwy"].forEach(function(c){ctx.strokeStyle=cc[c];ctx.lineWidth=wd[c]*(narrow?0.8:1)+1;D.roads.forEach(function(r){if(r.cls!==c)return;ctx.beginPath();ctx.moveTo(sx(NODES[r.a].x),sy(NODES[r.a].y));ctx.lineTo(sx(NODES[r.b].x),sy(NODES[r.b].y));ctx.stroke();});});
+  // routes
+  R.ti.forEach(function(t,q){var m=R.plan.metrics[t];if(!m.order.length)return;var dim=R.ti.length>1&&state.sel>=0&&state.sel!==t;
+    var seqn=[0].concat(m.order.map(function(i){return LOADS[i].c;})).concat([0]),off=(t-2)*(narrow?1.5:2.2);
+    ctx.strokeStyle=css(TC[t]);ctx.globalAlpha=dim?0.28:0.95;ctx.lineWidth=(state.sel===t?(narrow?3.4:4.4):(narrow?2.2:3));
+    for(var i=0;i<seqn.length-1;i++){var pn=pathNodes(net,seqn[i],seqn[i+1]);ctx.beginPath();
+      for(var k=0;k<pn.length;k++){var px=sx(NODES[pn[k]].x),py=sy(NODES[pn[k]].y),dx=0,dy=0;
+        var a=NODES[pn[Math.max(k-1,0)]],b=NODES[pn[Math.min(k+1,pn.length-1)]],ex=sx(b.x)-sx(a.x),ey=sy(b.y)-sy(a.y),L=Math.hypot(ex,ey)||1;dx=-ey/L*off;dy=ex/L*off;
+        k?ctx.lineTo(px+dx,py+dy):ctx.moveTo(px+dx,py+dy);}ctx.stroke();}
+    ctx.globalAlpha=1;});
+  // nodes
+  var ink=css("--ink"),surf=css("--surface");
+  NODES.forEach(function(n,i){if(i===0||n.t==="junction")return;var li=loadAt[i],x=sx(n.x),y=sy(n.y);
+    if(li===undefined||!state.loads[li]){ctx.beginPath();ctx.arc(x,y,narrow?2.5:3.2,0,6.2832);ctx.fillStyle=css("--axis");ctx.fill();return;}
+    var o=owner(li);ctx.beginPath();ctx.arc(x,y,narrow?7:9,0,6.2832);
+    if(o>=0){ctx.fillStyle=css(TC[o]);ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=surf;ctx.stroke();var no=R.plan.metrics[o].order.indexOf(li)+1;ctx.fillStyle="#fff";ctx.font="700 "+(narrow?9:11)+"px system-ui,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(no),x,y+0.5);}
+    else{ctx.fillStyle=surf;ctx.fill();ctx.lineWidth=2.2;ctx.strokeStyle=css("--warnink");ctx.stroke();ctx.fillStyle=css("--warnink");ctx.font="700 "+(narrow?9:11)+"px system-ui,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("✕",x,y+0.5);}
+    if(state.hover===i){ctx.lineWidth=2;ctx.strokeStyle=ink;ctx.beginPath();ctx.arc(x,y,(narrow?7:9)+3,0,6.2832);ctx.stroke();}});
+  // depot
+  var d0=NODES[0],dx0=sx(d0.x),dy0=sy(d0.y),s=narrow?8:10;ctx.fillStyle=ink;ctx.fillRect(dx0-s,dy0-s,2*s,2*s);ctx.fillStyle=surf;ctx.font="700 "+(narrow?9:11)+"px system-ui,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("Y",dx0,dy0+0.5);
+  if(!narrow){ctx.fillStyle=css("--ink2");ctx.font="11px system-ui,sans-serif";ctx.textAlign="left";ctx.textBaseline="middle";NODES.forEach(function(n,i){if(i===0||n.t==="junction")return;var li=loadAt[i];if(li!==undefined&&state.loads[li]){var right=sx(n.x)>MW-100;ctx.textAlign=right?"right":"left";ctx.fillText(n.n,sx(n.x)+(right?-13:12),sy(n.y));}});ctx.textAlign="left";
+    ctx.fillText("Harlan Yard",dx0+14,dy0-12);}
+}
+function hit(e){var rc=cvs.getBoundingClientRect(),px=e.clientX-rc.left,py=e.clientY-rc.top,best=-1,bd=1e9;
+  NODES.forEach(function(n,i){if(i===0||n.t==="junction")return;var d=Math.hypot(sx(n.x)-px,sy(n.y)-py);if(d<bd){bd=d;best=i;}});return bd<=16?{i:best,x:px,y:py,w:rc.width}:null;}
+cvs.addEventListener("mousemove",function(e){var h=hit(e),tip=$("tip"),old=state.hover;state.hover=h?h.i:-1;
+  if(!h){tip.hidden=true;}else{var n=NODES[h.i],li=loadAt[h.i],txt="<b>"+esc(n.n)+"</b>";
+    if(li!==undefined){var L=LOADS[li],o=state.loads[li]?owner(li):-2;txt+="<br>"+L.id+" · "+L.wt+" t · window "+hm(L.e)+" to "+hm(L.l);
+      if(o>=0){var m=R.plan.metrics[o],st=m.stops[m.order.indexOf(li)];txt+="<br>"+TR[o].name+" · stop "+(m.order.indexOf(li)+1)+" · arrive "+hm(st.arrive);}else if(o===-1)txt+="<br>Not planned";else txt+="<br>Dropped from today";}
+    else txt+="<br>No load today";tip.innerHTML=txt;tip.hidden=false;tip.style.left=Math.min(h.x+12,h.w-200)+"px";tip.style.top=Math.max(4,h.y-10)+"px";}
+  if(old!==state.hover)draw();});
+cvs.addEventListener("mouseleave",function(){$("tip").hidden=true;if(state.hover!==-1){state.hover=-1;draw();}});
+cvs.addEventListener("click",function(e){var h=hit(e);if(!h)return;var li=loadAt[h.i];if(li===undefined)return;state.loads[li]=state.loads[li]?0:1;build();renderAll();});
+
+/* ---------- panels ---------- */
+function reasonFor(li){
+  var maxcap=0;R.ti.forEach(function(t){maxcap=Math.max(maxcap,TR[t].cap);});var L=LOADS[li];
+  if(L.wt>maxcap)return "heavier than any truck available";
+  var anyAlone=false,lateAlone=true;R.ti.forEach(function(t){var m=evalRoute(D,net,[li],t,state.start);if(m.capOk&&m.hosOk){if(m.late<=1e-9)anyAlone=true;}});
+  if(anyAlone)return "trucks are full or their days are used up";
+  return "cannot reach the customer inside its window from this start time";
+}
+function renderKpis(){
+  var tp=R.tp,tb=R.tb,n=R.li.length,cpl=tp.delivered?tp.cost/tp.delivered:0,bpl=tb.delivered?tb.cost/tb.delivered:0,sav=(tp.delivered&&tb.delivered&&bpl>0)?(bpl-cpl)/bpl*100:null;
+  var T=[["Loads delivered",tp.delivered+" of "+n,"",R.plan.unassigned.length?R.plan.unassigned.length+" not planned":"every selected load planned"],
+         ["Distance",fmt(tp.km,0),"km",tp.trucksUsed+" of "+R.ti.length+" trucks used"],
+         ["Cost",money(tp.cost),"",tp.delivered?money(cpl)+" per load":"no loads planned"],
+         ["On time",tp.delivered?fmt(tp.onTime/tp.delivered*100,0):"–",tp.delivered?"%":"",tp.delivered?(tp.late?tp.late+" late":"every stop inside its window"):""],
+         ["Saving per load",sav===null?"–":fmt(sav,0),sav===null?"":"%",sav===null?"":"against the load-number plan ("+money(bpl)+")"]];
+  $("kpis").innerHTML=T.map(function(t){return '<div class="kpi"><div class="l">'+t[0]+'</div><div class="v">'+esc(t[1])+(t[2]?'<small>'+t[2]+'</small>':'')+'</div><div class="s">'+esc(t[3])+'</div></div>';}).join("");
+  $("vS").textContent=hm(state.start);
+}
+function renderRead(){
+  var tp=R.tp,tb=R.tb,li=[],h,n=R.li.length;
+  var idle=R.ti.filter(function(t){return !R.plan.metrics[t].order.length;});
+  if(!tp.delivered){h="No loads are planned";li.push("<li>Select at least one load and one truck that can carry it.</li>");}
+  else{
+    h=R.plan.unassigned.length?R.plan.unassigned.length+" of "+n+" loads cannot be planned":"All "+n+" loads are planned";
+    li.push("<li><b>"+tp.delivered+"</b> loads are delivered by <b>"+tp.trucksUsed+"</b> truck"+(tp.trucksUsed>1?"s":"")+" over <b>"+fmt(tp.km,0)+" km</b> for <b>"+money(tp.cost)+"</b>."+(idle.length?" "+idle.map(function(t){return TR[t].name;}).join(" and ")+" stay"+(idle.length>1?"":"s")+" at the yard.":"")+"</li>");
+    R.plan.unassigned.forEach(function(u){li.push("<li><b>"+esc(NODES[LOADS[u].c].n)+"</b> ("+LOADS[u].id+") is not planned: "+reasonFor(u)+(state.soft?"":". Turn on late deliveries or add a truck to see the effect")+".</li>");});
+    if(tb.delivered){var bl=tb.delivered?tb.cost/tb.delivered:0,pl=tp.cost/tp.delivered;
+      li.push("<li>The load-number plan delivers "+tb.delivered+" loads over "+fmt(tb.km,0)+" km for "+money(tb.cost)+" and misses <b>"+tb.late+"</b> time window"+(tb.late===1?"":"s")+". The planner costs <b>"+money(pl)+"</b> a load against <b>"+money(bl)+"</b>"+(pl<bl?", a saving of "+fmt((bl-pl)/bl*100,0)+"%":"")+".</li>");}
+    var mx=0,mt=-1;R.ti.forEach(function(t){var m=R.plan.metrics[t];if(m.duty>mx){mx=m.duty;mt=t;}});
+    if(mt>=0)li.push("<li>The longest day is <b>"+TR[mt].name+"</b> at <b>"+fmt(mx/60,1)+" h</b> on duty, "+fmt((D.cost.maxduty-mx)/60,1)+" h inside the 14 hour limit.</li>");
+  }
+  $("read").innerHTML='<h3>'+h+'</h3><ul>'+li.join("")+'</ul>';
+}
+function renderTrucks(){
+  $("trows").innerHTML=TR.map(function(t,i){var on=!!state.trucks[i],m=on?R.plan.metrics[i]:null,used=m&&m.order.length;
+    return '<tr class="tr'+(state.sel===i?' sel':'')+(on?'':' off')+'" '+(used?'tabindex="0" data-i="'+i+'"':'')+'><td class="nw"><i class="dot" style="background:var('+TC[i]+')"></i> '+t.name+'</td>'+
+      (used?'<td class="r">'+m.order.length+'</td><td class="r">'+fmt(m.wt,0)+' / '+t.cap+' t</td><td class="r">'+fmt(m.km,0)+' km</td><td class="r">'+fmt(m.duty/60,1)+' h</td><td class="r nx">'+money(m.cost)+'</td>':
+      '<td class="r" colspan="5" style="color:var(--muted)">'+(on?"At the yard":"Not available")+'</td>')+'</tr>';}).join("");
+}
+function pick(e){var tr=e.target.closest(".tr");if(!tr||tr.dataset.i===undefined)return;if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;e.preventDefault();state.sel=+tr.dataset.i;renderTrucks();renderStops();draw();renderTL();}
+$("trows").addEventListener("click",pick);$("trows").addEventListener("keydown",pick);
+function renderStops(){
+  if(state.sel<0){$("sTitle").textContent="Stops";$("sNote").textContent="";$("srows").innerHTML='<tr><td colspan="5">No truck has a route.</td></tr>';return;}
+  var t=state.sel,m=R.plan.metrics[t];$("sTitle").textContent=TR[t].name+" · stops";
+  $("sNote").textContent="Leaves the yard at "+hm(state.start+D.cost.loadmin)+" after loading, back at "+hm(m.end)+". "+fmt(m.km,0)+" km, "+fmt(m.drive/60,1)+" h driving.";
+  $("srows").innerHTML=m.stops.map(function(s,i){var L=LOADS[s.load],st=s.late>1e-9?'<span class="bad">✕ Late '+fmt(s.late,0)+' min</span>':(s.wait>0.5?'Waits '+fmt(s.wait,0)+' min':'<span class="ok">✓ On time</span>');
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(NODES[L.c].n)+'<small style="display:block;color:var(--muted)">'+L.id+' · '+L.wt+' t</small></td><td class="r">'+hm(s.arrive)+'</td><td class="r nx">'+hm(L.e)+' to '+hm(L.l)+'</td><td class="nw">'+st+'</td></tr>';}).join("")+
+    '<tr><td></td><td>Back at the yard</td><td class="r">'+hm(m.end)+'</td><td class="nx"></td><td></td></tr>';
+}
+function legend(){
+  $("legend").innerHTML=TR.map(function(t,i){return state.trucks[i]?'<span><i class="dot" style="background:var('+TC[i]+')"></i>'+t.name+'</span>':'';}).join("")+
+   '<span><i class="sq" style="background:var(--ink)"></i>Yard</span><span><i class="dot" style="border:2px solid var(--warnink);background:transparent"></i>Not planned</span><span><i class="dot" style="background:var(--axis)"></i>No load</span><span>Roads: thick highway, thin local</span>';
+  $("tlegend").innerHTML='<span><i class="sq" style="background:var(--t1)"></i>Driving (truck colour)</span><span><i class="sq" style="background:var(--ink2)"></i>Loading and unloading</span><span><i class="sq" style="background:repeating-linear-gradient(45deg,var(--axis) 0 3px,transparent 3px 6px)"></i>Waiting for a window</span><span><i class="sq" style="background:var(--warnink)"></i>Late arrival</span>';
+}
+
+/* ---------- timeline ---------- */
+var tl=$("tl"),tctx=tl.getContext("2d");
+function renderTL(){
+  var w=tl.clientWidth||700,rows=R.ti.filter(function(t){return R.plan.metrics[t].order.length;}),RH=30,top=24,left=narrowLeft(w),h=top+rows.length*RH+10;
+  var dpr=window.devicePixelRatio||1;tl.width=Math.round(w*dpr);tl.height=Math.round(h*dpr);tl.style.height=h+"px";tctx.setTransform(dpr,0,0,dpr,0,0);
+  tctx.clearRect(0,0,w,h);var t0=Math.floor(state.start/60)*60,t1=t0+16*60,X=function(m){return left+(m-t0)/(t1-t0)*(w-left-8);};
+  tctx.font="11px system-ui,sans-serif";tctx.textBaseline="middle";
+  for(var hh=t0;hh<=t1;hh+=120){tctx.strokeStyle=css("--grid");tctx.lineWidth=1;tctx.beginPath();tctx.moveTo(X(hh),top-6);tctx.lineTo(X(hh),h-6);tctx.stroke();tctx.fillStyle=css("--ink2");tctx.textAlign="center";tctx.fillText(hm(hh),X(hh),10);}
+  rows.forEach(function(t,q){var m=R.plan.metrics[t],y=top+q*RH,bh=16,by=y+(RH-bh)/2-2;
+    tctx.fillStyle=css("--ink");tctx.textAlign="left";tctx.fillText(narrowLeft(w)<80?TR[t].id:TR[t].name,2,y+RH/2-2);
+    function seg(a,b,col){tctx.fillStyle=col;tctx.fillRect(X(a),by,Math.max(1,X(b)-X(a)),bh);}
+    function hatch(a,b){var x0=X(a),x1=X(b);tctx.fillStyle=css("--plane");tctx.fillRect(x0,by,x1-x0,bh);tctx.save();tctx.beginPath();tctx.rect(x0,by,x1-x0,bh);tctx.clip();tctx.strokeStyle=css("--muted");tctx.lineWidth=1;for(var x=x0-bh;x<x1;x+=5){tctx.beginPath();tctx.moveTo(x,by+bh);tctx.lineTo(x+bh,by);tctx.stroke();}tctx.restore();}
+    var cur=state.start;seg(cur,cur+D.cost.loadmin,css("--ink2"));cur+=D.cost.loadmin;
+    m.stops.forEach(function(s){seg(cur,s.arrive,css(TC[t]));if(s.wait>0)hatch(s.arrive,s.arrive+s.wait);seg(s.start,s.end,css("--ink2"));
+      if(s.late>1e-9){tctx.fillStyle=css("--warnink");tctx.fillRect(X(s.arrive)-1,by-4,3,bh+8);}cur=s.end;});
+    seg(cur,m.end,css(TC[t]));
+    var lim=state.start+D.cost.maxduty;tctx.strokeStyle=css("--warnink");tctx.setLineDash([3,3]);tctx.lineWidth=1.2;tctx.beginPath();tctx.moveTo(X(lim),y+1);tctx.lineTo(X(lim),y+RH-3);tctx.stroke();tctx.setLineDash([]);
+    if(state.sel===t){tctx.strokeStyle=css("--c1");tctx.lineWidth=2;tctx.strokeRect(1,y+1,w-2,RH-4);}});
+}
+function narrowLeft(w){return w<560?34:86;}
+tl.addEventListener("click",function(e){var rc=tl.getBoundingClientRect(),y=e.clientY-rc.top,rows=R.ti.filter(function(t){return R.plan.metrics[t].order.length;}),q=Math.floor((y-24)/30);if(q>=0&&q<rows.length){state.sel=rows[q];renderTrucks();renderStops();draw();renderTL();}});
+
+function renderAll(){analyse();renderKpis();renderRead();renderTrucks();renderStops();legend();draw();renderTL();}
+var rt=null;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){draw();renderTL();},120);});
+if(window.matchMedia){try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){renderAll();});}catch(e){}}
+build();renderAll();
+})();
+</script>
+</body>
+</html>

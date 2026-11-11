@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prairie Crop Stress Monitor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+html,body{margin:0}
+/* Layout: crop filter chips, five KPI tiles, field map with a date slider and the most-behind list, then a plain-language reading, the selected field's curve, flagged acres by week and crop curves.
+   Palette: warm neutrals; a light-to-dark green ramp for greenness; a diverging orange to blue scale for difference from peers; four muted hues for crops. */
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.12); --onc1:#ffffff;
+  --c1:#2a78d6; --c2:#eb6834; --warnink:#b3261e; --tint:#ece9df; --water:#a9cbee;
+  --g0:#f1e9b5; --g1:#d3df8a; --g2:#93c46a; --g3:#4a9a55; --g4:#1d6a45;
+  --d0:#b3261e; --d1:#e08a3c; --d2:#f0d9a0; --d3:#e4e2d8; --d4:#9cc6ee; --d5:#2a78d6;
+  --k1:#c79a2b; --k2:#7a5bd0; --k3:#1aa6a6; --k4:#d6479c;
+  --tipbg:#0b0b0b; --tipfg:#fcfcfb; --sys:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.12); --onc1:#0b0b0b;
+    --c1:#3987e5; --c2:#d95926; --warnink:#f08a80; --tint:#242422; --water:#2b4f7a;
+    --d0:#f0705f; --d1:#e5964a; --d2:#8a7a45; --d3:#3a3a37; --d4:#4a7fb8; --d5:#4a95ee;
+    --k1:#d4a93f; --k2:#9b7ee8; --k3:#3cc4c4; --k4:#ea6bb4;
+    --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.12); --onc1:#0b0b0b;
+  --c1:#3987e5; --c2:#d95926; --warnink:#f08a80; --tint:#242422; --water:#2b4f7a;
+  --d0:#f0705f; --d1:#e5964a; --d2:#8a7a45; --d3:#3a3a37; --d4:#4a7fb8; --d5:#4a95ee;
+  --k1:#d4a93f; --k2:#9b7ee8; --k3:#3cc4c4; --k4:#ea6bb4;
+  --tipbg:#f0efec; --tipfg:#0d0d0d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sys);font-size:14px;line-height:1.45;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.app>*,.main>*,.col>*{min-width:0;max-width:100%}
+h1,h2,h3,p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(24px,4.4vw,32px);line-height:1.15;font-weight:650;text-wrap:balance}
+.sub{color:var(--ink2);margin-top:4px;max-width:76ch}
+.demo{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--axis);color:var(--ink2);border-radius:999px;padding:4px 10px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px;min-width:0}
+.cardhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}
+h2{font-size:15px;font-weight:650}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+button,select,input{font:inherit;color:var(--ink)}
+.chip:focus-visible,.seg button:focus-visible,.tr:focus-visible,canvas:focus-visible,input:focus-visible,.play:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--axis);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);border:0;border-right:1px solid var(--axis);padding:6px 12px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--c1);color:var(--onc1);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:1px solid var(--axis);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+.chip b{font-variant-numeric:tabular-nums;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--c1);border-color:var(--c1);color:var(--onc1)}
+.chip[aria-pressed="false"]{opacity:.75}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2)}
+.kpi .v{font-size:28px;font-weight:650;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.main{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mapwrap{position:relative;border:1px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--plane)}
+canvas#map{display:block;width:100%;height:auto;cursor:crosshair}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:12px;padding:6px 9px;border-radius:6px;max-width:240px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sq{display:inline-block;width:14px;height:12px;border-radius:2px;flex:none;border:1px solid var(--ring)}
+.readout{margin-top:8px;font-size:13px;color:var(--ink2);min-height:3em}
+.readout b{color:var(--ink)}
+.timebar{display:flex;align-items:center;gap:10px;margin-top:12px}
+.play{background:var(--c1);color:var(--onc1);border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;min-width:74px}
+.timebar input[type=range]{flex:1;min-width:0;accent-color:var(--c1)}
+.wk{font-size:13px;color:var(--ink2);margin-top:6px}
+.wk b{color:var(--ink)}
+.read h3{font-size:16px;font-weight:650;margin-bottom:6px}
+.read ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:13px;display:flex;flex-direction:column;gap:5px}
+.read b{color:var(--ink)}
+.chartbox{position:relative;height:230px;margin-top:8px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:420px;font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.r{text-align:right} th.r{text-align:right}
+td.r,td.nw{white-space:nowrap}
+.tr{cursor:pointer}
+.tr:hover td,.tr.sel td{background:var(--plane)}
+.tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--c1)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-width:96ch}
+@media (max-width:960px){.main{display:flex;flex-direction:column;align-items:stretch}.col{display:contents}.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}.o7{order:7}}
+@media (max-width:560px){
+  .nx{display:none}
+  table{min-width:0;font-size:12px}
+  th,td{padding:6px 4px}
+  .kpi:last-child:nth-child(odd){grid-column:1 / -1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Midspan Geospatial Ltd · Agriculture</p>
+      <h1>Prairie Crop Stress Monitor</h1>
+      <p class="sub">Weekly greenness for 150 quarter-section fields in a fictional prairie municipality. Step through the growing season and see which fields fall behind other fields growing the same crop, and whether the pattern points to weather, soil or management.</p>
+    </div>
+    <span class="demo">Fictional municipality · synthetic data</span>
+  </header>
+
+  <section class="card" aria-label="Crops">
+    <div class="cardhead" style="margin-bottom:8px"><div><h2>Crops</h2><p class="note">Turn crops on or off. Each field is always compared with its own crop's median.</p></div></div>
+    <div class="chips" id="chips" role="group" aria-label="Crops"></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Summary indicators"></section>
+
+  <section class="main">
+    <div class="col">
+      <article class="card o1">
+        <div class="cardhead">
+          <div><h2 id="mapTitle">Greenness by field</h2><p class="note">Select a field for its season curve. The creek runs west to east.</p></div>
+          <div class="seg" id="segLayer" role="group" aria-label="Map layer"></div>
+        </div>
+        <div class="mapwrap">
+          <canvas id="map" width="1000" height="667" role="img" aria-label="Map of 150 fields coloured by greenness, difference from peers or crop" tabindex="0"></canvas>
+          <div class="tip" id="tip" hidden></div>
+        </div>
+        <div class="legend" id="legend"></div>
+        <div class="timebar"><button type="button" class="play" id="play" aria-label="Play the season">Play</button><input type="range" id="rngW" min="0" max="19" step="1" aria-label="Week of the growing season"></div>
+        <p class="wk" id="wk"></p>
+        <p class="readout" id="readout"></p>
+      </article>
+      <article class="card o6">
+        <div class="cardhead"><div><h2>Furthest behind peers</h2><p class="note">The ten fields lowest against their crop's median this week. Select a row to find it on the map.</p></div></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Field</th><th>Crop</th><th class="r">Greenness</th><th class="r">Vs peers</th><th class="r nx">Acres</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <div class="col">
+      <article class="card read o2" id="read" aria-live="polite"></article>
+      <article class="card o3">
+        <h2 id="fTitle">Selected field</h2>
+        <p class="note" id="fNote">Select a field on the map to compare it with its crop.</p>
+        <div class="chartbox"><canvas id="c1" role="img" aria-label="Line chart of the selected field's greenness through the season against the median of the same crop"></canvas></div>
+      </article>
+      <article class="card o4">
+        <h2>Fields behind peers, week by week</h2>
+        <p class="note">Acres 0.10 or more below the crop median, in the selected crops. The highlighted bar is the week on the map.</p>
+        <div class="chartbox"><canvas id="c2" role="img" aria-label="Bar chart of acres behind peers for each week of the season"></canvas></div>
+      </article>
+      <article class="card o5">
+        <h2>Median greenness by crop</h2>
+        <p class="note">The curve each field is compared with. The larger dot marks the week on the map.</p>
+        <div class="chartbox"><canvas id="c3" role="img" aria-label="Line chart of median greenness for each crop through the season"></canvas></div>
+      </article>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>The municipality, fields, crops and values are invented for demonstration, including the season. The index is NDVI-style greenness from 0 to 1 and is not taken from any satellite. A real analysis would use cloud-masked imagery from Sentinel-2 or similar, plus field boundaries and seeding records from the producers.</p>
+    <p>Method: each field has a weekly value. A field is flagged when it sits 0.10 or more below the median of all fields growing the same crop in the same week. A flagged field with a flagged neighbour on any side or corner suggests a shared cause such as hail, dry soil or a wet spring. An isolated flagged field is more likely a management or disease issue. Both are prompts to look at the field, not diagnoses.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = {"w":12.0,"h":8.0,"cols":15,"rows":10,"cell":0.8,"day0":124,"nw":20,"crops":["Spring wheat","Canola","Barley","Field peas"],"fields":[{"i":"F001","c":0,"col":0,"row":0,"ac":158.3,"v":[205,196,243,275,389,489,583,692,719,721,591,534,531,486,400,355,274,226,177,183]},{"i":"F002","c":0,"col":1,"row":0,"ac":160.3,"v":[211,215,233,280,319,423,524,607,660,652,535,525,499,475,408,337,249,199,190,166]},{"i":"F003","c":0,"col":2,"row":0,"ac":159.0,"v":[193,212,252,284,375,467,559,637,707,746,728,726,684,606,514,402,320,249,219,194]},{"i":"F004","c":2,"col":3,"row":0,"ac":157.4,"v":[196,220,279,348,461,554,635,699,684,707,676,608,536,438,328,260,199,178,190,175]},{"i":"F005","c":2,"col":4,"row":0,"ac":162.9,"v":[200,222,267,332,399,517,618,661,667,695,653,605,559,453,346,252,213,203,186,187]},{"i":"F006","c":1,"col":5,"row":0,"ac":159.8,"v":[189,213,264,295,403,505,583,660,672,722,702,682,629,541,418,333,249,225,186,194]},{"i":"F007","c":1,"col":6,"row":0,"ac":158.8,"v":[188,198,206,271,337,401,520,588,624,662,676,696,676,578,485,382,285,227,207,200]},{"i":"F008","c":0,"col":7,"row":0,"ac":160.8,"v":[185,206,239,278,363,447,565,612,674,699,684,667,638,588,488,395,285,257,227,205]},{"i":"F009","c":0,"col":8,"row":0,"ac":161.0,"v":[191,182,258,284,391,487,567,645,709,697,720,705,653,629,510,414,341,285,221,195]},{"i":"F010","c":0,"col":9,"row":0,"ac":155.8,"v":[190,216,278,323,391,481,586,651,702,729,696,656,635,561,472,368,297,254,221,211]},{"i":"F011","c":0,"col":10,"row":0,"ac":159.1,"v":[197,197,219,268,316,390,486,582,645,690,684,675,659,570,489,404,326,288,214,208]},{"i":"F012","c":2,"col":11,"row":0,"ac":156.5,"v":[211,218,288,347,411,519,576,638,638,658,661,591,504,389,316,257,197,174,137,141]},{"i":"F013","c":2,"col":12,"row":0,"ac":156.4,"v":[201,212,279,336,419,522,589,611,584,521,440,352,227,179,149,128,112,139,116,97]},{"i":"F014","c":2,"col":13,"row":0,"ac":162.9,"v":[166,199,255,325,391,482,576,634,635,650,610,559,505,385,316,249,212,161,167,153]},{"i":"F015","c":1,"col":14,"row":0,"ac":166.2,"v":[197,221,300,368,419,552,638,717,742,735,707,669,614,520,428,340,229,218,198,178]},{"i":"F016","c":0,"col":0,"row":1,"ac":159.2,"v":[179,219,262,299,393,474,601,666,728,762,558,566,570,505,459,375,266,242,180,175]},{"i":"F017","c":1,"col":1,"row":1,"ac":160.9,"v":[182,211,278,353,423,536,638,681,706,727,550,567,516,456,366,300,222,177,171,197]},{"i":"F018","c":3,"col":2,"row":1,"ac":160.2,"v":[200,208,227,254,288,344,418,503,576,604,522,531,519,476,428,339,265,202,176,171]},{"i":"F019","c":3,"col":3,"row":1,"ac":159.6,"v":[196,205,195,224,251,333,405,464,557,601,423,434,383,360,309,247,228,175,159,128]},{"i":"F020","c":1,"col":4,"row":1,"ac":158.5,"v":[188,216,234,248,339,426,513,608,654,649,670,676,624,550,449,342,262,240,199,188]},{"i":"F021","c":1,"col":5,"row":1,"ac":161.0,"v":[190,211,245,283,368,459,546,644,680,669,683,691,613,568,462,365,271,211,209,168]},{"i":"F022","c":3,"col":6,"row":1,"ac":160.3,"v":[201,197,217,232,315,372,445,541,564,615,635,617,544,506,410,338,286,216,200,186]},{"i":"F023","c":1,"col":7,"row":1,"ac":161.6,"v":[185,241,259,314,362,489,574,668,708,713,699,698,663,546,460,354,289,225,212,184]},{"i":"F024","c":0,"col":8,"row":1,"ac":162.1,"v":[202,196,216,258,337,443,516,626,675,720,764,737,704,679,568,466,367,299,233,211]},{"i":"F025","c":0,"col":9,"row":1,"ac":159.5,"v":[219,254,294,382,443,572,643,710,698,759,741,732,653,556,460,380,302,237,198,213]},{"i":"F026","c":1,"col":10,"row":1,"ac":159.6,"v":[219,219,277,337,467,552,632,687,711,687,703,663,615,564,434,356,272,193,175,168]},{"i":"F027","c":0,"col":11,"row":1,"ac":161.2,"v":[211,239,250,318,403,479,586,628,644,635,635,611,571,491,418,326,256,221,176,154]},{"i":"F028","c":3,"col":12,"row":1,"ac":158.0,"v":[198,209,223,277,312,354,435,477,541,544,535,479,443,390,289,254,190,158,142,121]},{"i":"F029","c":1,"col":13,"row":1,"ac":163.6,"v":[196,220,252,330,380,491,577,623,637,611,602,604,560,471,384,305,225,164,173,136]},{"i":"F030","c":1,"col":14,"row":1,"ac":162.3,"v":[196,233,298,339,464,534,671,714,732,709,705,672,621,470,370,274,240,173,208,167]},{"i":"F031","c":1,"col":0,"row":2,"ac":161.2,"v":[188,217,278,334,410,528,575,678,702,726,721,716,646,570,466,366,262,217,202,203]},{"i":"F032","c":3,"col":1,"row":2,"ac":159.8,"v":[196,184,250,283,334,433,481,574,651,678,536,521,480,430,338,279,191,201,198,163]},{"i":"F033","c":3,"col":2,"row":2,"ac":158.4,"v":[155,195,204,231,275,325,410,474,557,605,401,407,395,355,308,240,198,164,118,141]},{"i":"F034","c":3,"col":3,"row":2,"ac":162.5,"v":[196,209,213,264,307,359,451,533,612,633,504,489,428,397,353,258,228,203,160,171]},{"i":"F035","c":1,"col":4,"row":2,"ac":159.8,"v":[178,220,239,318,405,484,587,669,733,684,532,516,491,445,357,282,226,192,136,159]},{"i":"F036","c":1,"col":5,"row":2,"ac":162.9,"v":[178,219,245,300,396,470,567,637,689,711,456,484,427,401,346,262,198,173,169,165]},{"i":"F037","c":1,"col":6,"row":2,"ac":162.1,"v":[181,205,271,324,407,499,583,655,716,720,694,696,661,586,461,349,294,238,192,177]},{"i":"F038","c":2,"col":7,"row":2,"ac":159.1,"v":[206,243,253,340,427,516,594,624,686,676,654,587,517,436,329,265,224,175,181,186]},{"i":"F039","c":2,"col":8,"row":2,"ac":158.9,"v":[214,213,281,341,424,522,612,668,678,677,632,554,490,364,286,245,189,195,169,160]},{"i":"F040","c":1,"col":9,"row":2,"ac":161.4,"v":[206,226,251,317,408,508,611,670,744,706,724,736,674,611,467,366,260,249,189,178]},{"i":"F041","c":0,"col":10,"row":2,"ac":158.6,"v":[200,199,232,290,360,452,524,599,649,686,698,670,648,598,519,404,333,242,205,188]},{"i":"F042","c":0,"col":11,"row":2,"ac":156.0,"v":[193,210,250,305,371,451,552,597,610,630,611,561,537,478,396,301,248,211,160,161]},{"i":"F043","c":1,"col":12,"row":2,"ac":163.7,"v":[219,240,294,358,452,540,625,651,632,603,562,549,494,400,314,230,187,159,169,119]},{"i":"F044","c":3,"col":13,"row":2,"ac":161.3,"v":[193,197,221,269,333,368,441,494,562,566,581,545,483,479,379,298,213,166,162,154]},{"i":"F045","c":2,"col":14,"row":2,"ac":160.4,"v":[200,233,247,318,386,477,589,644,668,684,651,614,507,420,333,244,203,170,180,159]},{"i":"F046","c":2,"col":0,"row":3,"ac":160.9,"v":[206,238,295,332,434,509,623,637,690,685,656,615,525,405,332,263,208,176,192,185]},{"i":"F047","c":3,"col":1,"row":3,"ac":161.7,"v":[182,195,193,217,287,349,388,462,533,594,638,632,624,601,513,413,319,279,208,194]},{"i":"F048","c":1,"col":2,"row":3,"ac":159.8,"v":[184,209,251,280,396,501,599,673,710,710,726,698,656,543,444,343,263,199,179,189]},{"i":"F049","c":3,"col":3,"row":3,"ac":160.3,"v":[210,198,216,256,317,400,456,509,591,617,446,477,424,373,338,258,193,176,139,136]},{"i":"F050","c":2,"col":4,"row":3,"ac":157.5,"v":[191,224,242,299,388,472,551,627,640,657,499,463,412,316,265,235,183,176,162,111]},{"i":"F051","c":1,"col":5,"row":3,"ac":159.6,"v":[191,219,246,362,444,536,614,666,733,680,570,545,487,415,336,260,197,190,155,167]},{"i":"F052","c":0,"col":6,"row":3,"ac":161.6,"v":[194,239,224,281,358,438,530,605,677,698,594,561,537,508,435,327,288,219,179,184]},{"i":"F053","c":0,"col":7,"row":3,"ac":160.9,"v":[180,196,240,285,335,423,528,578,620,670,679,653,613,580,465,369,271,261,232,179]},{"i":"F054","c":2,"col":8,"row":3,"ac":161.8,"v":[202,240,266,330,411,530,585,659,663,651,642,591,512,409,315,217,218,172,171,198]},{"i":"F055","c":0,"col":9,"row":3,"ac":159.4,"v":[192,211,234,311,390,465,542,668,685,726,714,699,682,600,527,432,328,273,237,217]},{"i":"F056","c":0,"col":10,"row":3,"ac":157.6,"v":[200,205,258,323,403,498,577,666,700,735,720,713,644,598,514,418,319,247,239,190]},{"i":"F057","c":1,"col":11,"row":3,"ac":160.5,"v":[203,232,260,335,407,502,621,671,683,646,640,618,582,487,387,306,211,177,162,169]},{"i":"F058","c":2,"col":12,"row":3,"ac":161.5,"v":[211,255,282,363,441,556,620,649,664,658,628,575,464,370,313,228,172,167,175,149]},{"i":"F059","c":3,"col":13,"row":3,"ac":161.5,"v":[190,197,210,288,311,368,483,536,608,621,629,619,566,491,412,299,253,208,160,183]},{"i":"F060","c":1,"col":14,"row":3,"ac":158.3,"v":[243,216,264,351,432,549,626,691,733,739,717,710,623,521,392,291,232,201,216,164]},{"i":"F061","c":1,"col":0,"row":4,"ac":159.7,"v":[173,217,280,320,435,535,621,691,730,714,722,709,667,548,444,327,276,213,205,180]},{"i":"F062","c":1,"col":1,"row":4,"ac":160.8,"v":[194,222,280,333,419,533,614,657,705,645,665,628,579,469,387,275,241,201,191,163]},{"i":"F063","c":1,"col":2,"row":4,"ac":160.2,"v":[176,178,212,266,338,365,454,548,598,591,589,624,600,522,406,334,246,188,181,184]},{"i":"F064","c":0,"col":3,"row":4,"ac":158.9,"v":[180,186,205,210,236,290,361,412,531,603,622,644,613,590,503,433,354,266,213,193]},{"i":"F065","c":0,"col":4,"row":4,"ac":163.2,"v":[195,227,239,313,423,484,584,670,680,716,684,672,639,571,500,381,308,276,219,199]},{"i":"F066","c":0,"col":5,"row":4,"ac":160.4,"v":[212,221,260,365,462,535,588,677,728,693,591,573,519,511,437,357,305,235,215,210]},{"i":"F067","c":0,"col":6,"row":4,"ac":161.2,"v":[189,216,250,300,400,479,549,666,724,720,586,556,530,493,468,390,308,227,211,161]},{"i":"F068","c":0,"col":7,"row":4,"ac":159.8,"v":[172,213,236,315,397,453,544,633,707,694,547,507,488,460,386,325,258,211,181,182]},{"i":"F069","c":0,"col":8,"row":4,"ac":156.6,"v":[172,185,190,224,243,293,372,494,565,645,524,541,538,515,427,346,292,237,192,190]},{"i":"F070","c":1,"col":9,"row":4,"ac":157.5,"v":[177,181,229,208,257,329,397,502,586,624,669,679,660,619,499,400,292,239,223,190]},{"i":"F071","c":1,"col":10,"row":4,"ac":159.1,"v":[205,212,262,326,389,511,603,676,698,714,705,698,691,577,456,383,304,220,197,184]},{"i":"F072","c":2,"col":11,"row":4,"ac":162.3,"v":[203,237,306,363,450,534,628,672,709,692,696,636,553,470,370,290,224,202,184,187]},{"i":"F073","c":3,"col":12,"row":4,"ac":163.3,"v":[169,163,188,218,203,241,306,367,468,535,607,632,631,569,500,387,314,251,221,179]},{"i":"F074","c":2,"col":13,"row":4,"ac":157.6,"v":[183,171,199,236,278,349,408,524,600,649,653,590,500,439,361,259,213,200,198,186]},{"i":"F075","c":2,"col":14,"row":4,"ac":161.4,"v":[170,182,215,241,285,362,463,535,603,632,656,615,564,475,373,286,240,203,202,168]},{"i":"F076","c":1,"col":0,"row":5,"ac":159.2,"v":[183,189,174,211,234,280,379,468,520,576,612,629,600,549,469,323,281,205,201,187]},{"i":"F077","c":1,"col":1,"row":5,"ac":160.5,"v":[197,172,204,251,288,359,440,530,570,557,571,585,556,499,395,326,267,189,178,176]},{"i":"F078","c":1,"col":2,"row":5,"ac":163.6,"v":[196,180,211,269,295,371,463,533,564,575,609,582,547,510,421,302,256,204,172,160]},{"i":"F079","c":1,"col":3,"row":5,"ac":164.3,"v":[175,184,188,230,277,319,386,465,553,555,573,584,571,524,431,330,240,214,173,169]},{"i":"F080","c":0,"col":4,"row":5,"ac":160.4,"v":[199,223,245,339,426,508,599,634,686,690,700,639,611,584,501,397,327,272,231,192]},{"i":"F081","c":1,"col":5,"row":5,"ac":161.3,"v":[195,224,262,347,407,527,609,671,677,700,723,692,627,590,465,351,281,214,212,183]},{"i":"F082","c":0,"col":6,"row":5,"ac":159.0,"v":[196,182,242,307,388,466,545,587,641,600,556,478,386,319,239,181,163,143,157,119]},{"i":"F083","c":0,"col":7,"row":5,"ac":158.7,"v":[193,197,258,310,403,477,595,669,726,724,550,561,510,469,412,327,292,235,160,140]},{"i":"F084","c":0,"col":8,"row":5,"ac":160.0,"v":[175,211,218,268,327,425,524,608,698,711,622,615,612,537,494,393,322,266,198,183]},{"i":"F085","c":2,"col":9,"row":5,"ac":160.4,"v":[176,234,285,350,450,486,590,681,710,734,519,460,451,376,314,249,195,165,166,140]},{"i":"F086","c":2,"col":10,"row":5,"ac":159.9,"v":[175,178,220,288,293,402,495,535,610,664,442,446,429,369,294,244,198,149,142,148]},{"i":"F087","c":3,"col":11,"row":5,"ac":157.4,"v":[149,177,185,191,212,229,270,338,415,482,561,586,598,572,516,417,339,287,216,214]},{"i":"F088","c":2,"col":12,"row":5,"ac":160.2,"v":[170,204,214,239,255,362,442,533,592,659,647,611,526,450,343,299,234,194,184,197]},{"i":"F089","c":1,"col":13,"row":5,"ac":157.3,"v":[169,173,195,196,224,256,316,391,455,556,599,645,668,613,553,441,329,254,230,187]},{"i":"F090","c":1,"col":14,"row":5,"ac":160.7,"v":[185,192,177,203,255,297,360,452,528,554,593,643,626,543,432,333,271,238,214,184]},{"i":"F091","c":1,"col":0,"row":6,"ac":159.3,"v":[186,201,216,234,270,314,405,489,548,560,587,564,527,491,419,313,237,213,195,148]},{"i":"F092","c":0,"col":1,"row":6,"ac":162.1,"v":[167,167,203,206,259,305,392,452,511,531,571,560,533,503,443,377,286,230,177,158]},{"i":"F093","c":0,"col":2,"row":6,"ac":158.5,"v":[171,168,178,190,213,239,296,369,406,457,479,504,486,486,410,371,283,238,198,141]},{"i":"F094","c":0,"col":3,"row":6,"ac":159.7,"v":[173,201,187,208,214,231,303,360,418,426,425,371,353,297,221,178,148,151,130,126]},{"i":"F095","c":0,"col":4,"row":6,"ac":161.8,"v":[159,191,196,194,235,260,322,403,472,554,608,596,586,561,488,420,309,256,196,160]},{"i":"F096","c":1,"col":5,"row":6,"ac":160.8,"v":[190,202,228,255,352,448,538,608,655,656,668,657,662,570,460,350,265,234,186,175]},{"i":"F097","c":0,"col":6,"row":6,"ac":160.8,"v":[178,183,233,281,380,435,534,604,646,616,556,478,341,276,220,185,154,162,133,128]},{"i":"F098","c":0,"col":7,"row":6,"ac":158.8,"v":[193,199,211,235,273,347,419,528,617,635,698,652,642,582,507,420,356,261,218,193]},{"i":"F099","c":0,"col":8,"row":6,"ac":163.5,"v":[211,237,240,341,408,509,576,649,688,716,524,513,492,469,411,307,266,212,179,172]},{"i":"F100","c":1,"col":9,"row":6,"ac":155.2,"v":[204,240,286,336,428,542,629,665,683,676,495,514,454,412,314,268,214,178,166,134]},{"i":"F101","c":1,"col":10,"row":6,"ac":159.7,"v":[202,216,253,303,385,461,584,646,679,659,428,457,391,349,286,232,191,161,129,137]},{"i":"F102","c":2,"col":11,"row":6,"ac":161.7,"v":[184,227,273,324,433,497,568,620,670,678,566,505,472,408,305,257,198,170,185,170]},{"i":"F103","c":3,"col":12,"row":6,"ac":160.1,"v":[203,208,203,234,297,364,443,526,587,645,558,532,494,455,368,278,246,203,194,163]},{"i":"F104","c":1,"col":13,"row":6,"ac":159.0,"v":[201,202,233,284,338,425,555,610,638,637,647,667,611,530,440,351,290,215,190,189]},{"i":"F105","c":1,"col":14,"row":6,"ac":159.0,"v":[191,205,260,338,420,516,593,664,693,691,707,642,597,469,365,269,228,219,188,195]},{"i":"F106","c":0,"col":0,"row":7,"ac":160.7,"v":[216,213,234,330,372,463,546,616,643,652,636,619,596,550,436,385,306,245,189,177]},{"i":"F107","c":0,"col":1,"row":7,"ac":160.7,"v":[207,181,207,240,333,386,460,536,576,553,577,549,508,440,368,314,252,194,160,138]},{"i":"F108","c":0,"col":2,"row":7,"ac":160.2,"v":[182,226,221,286,339,408,486,547,574,566,516,546,478,483,395,322,267,200,166,144]},{"i":"F109","c":0,"col":3,"row":7,"ac":161.2,"v":[190,189,276,300,371,446,519,542,578,574,547,520,471,389,301,261,221,154,166,143]},{"i":"F110","c":0,"col":4,"row":7,"ac":156.3,"v":[213,242,276,314,412,497,577,638,624,651,639,597,584,499,429,311,287,215,181,184]},{"i":"F111","c":0,"col":5,"row":7,"ac":158.0,"v":[192,199,217,259,353,445,505,583,655,698,645,622,577,503,444,328,300,229,206,183]},{"i":"F112","c":0,"col":6,"row":7,"ac":162.1,"v":[193,202,230,274,318,422,514,573,622,690,679,667,646,617,535,444,377,292,257,210]},{"i":"F113","c":0,"col":7,"row":7,"ac":163.4,"v":[168,198,237,278,317,402,515,589,668,716,718,701,710,605,511,424,341,277,225,209]},{"i":"F114","c":0,"col":8,"row":7,"ac":161.9,"v":[178,193,230,287,371,425,529,599,645,678,713,694,663,613,532,441,374,289,197,213]},{"i":"F115","c":2,"col":9,"row":7,"ac":157.0,"v":[207,245,294,325,438,534,589,640,578,506,434,338,225,191,166,153,157,168,127,129]},{"i":"F116","c":3,"col":10,"row":7,"ac":161.7,"v":[206,201,217,251,326,378,463,550,618,654,465,461,452,405,335,282,234,179,164,166]},{"i":"F117","c":2,"col":11,"row":7,"ac":160.2,"v":[204,235,275,367,433,521,598,650,658,654,519,454,379,294,246,220,191,177,166,161]},{"i":"F118","c":3,"col":12,"row":7,"ac":159.7,"v":[178,208,206,251,292,381,474,504,581,600,475,475,412,379,300,232,194,188,163,149]},{"i":"F119","c":3,"col":13,"row":7,"ac":157.1,"v":[168,196,214,246,256,333,390,497,559,599,465,514,476,457,364,321,264,178,181,178]},{"i":"F120","c":1,"col":14,"row":7,"ac":160.4,"v":[188,214,263,328,395,503,604,684,710,687,468,442,430,347,298,223,184,168,154,159]},{"i":"F121","c":0,"col":0,"row":8,"ac":160.4,"v":[211,177,242,286,337,422,492,578,623,625,634,614,549,502,414,328,271,219,177,162]},{"i":"F122","c":0,"col":1,"row":8,"ac":160.0,"v":[193,195,258,312,388,464,523,584,608,626,630,559,556,493,416,340,251,224,184,158]},{"i":"F123","c":0,"col":2,"row":8,"ac":158.3,"v":[175,206,236,292,359,421,522,578,572,586,567,559,520,485,396,336,251,202,177,134]},{"i":"F124","c":0,"col":3,"row":8,"ac":159.7,"v":[178,220,250,316,358,471,544,607,622,616,566,573,530,438,373,299,228,193,155,152]},{"i":"F125","c":0,"col":4,"row":8,"ac":157.3,"v":[200,199,221,231,330,380,466,545,591,607,640,613,597,494,415,367,254,223,183,164]},{"i":"F126","c":0,"col":5,"row":8,"ac":160.6,"v":[204,188,220,264,320,387,478,570,618,624,651,635,595,572,498,386,311,279,210,186]},{"i":"F127","c":0,"col":6,"row":8,"ac":158.2,"v":[178,219,237,277,367,486,554,650,693,711,748,717,693,660,525,455,365,290,230,210]},{"i":"F128","c":0,"col":7,"row":8,"ac":160.3,"v":[188,222,251,278,388,496,571,621,685,698,726,748,704,619,531,442,373,293,257,200]},{"i":"F129","c":0,"col":8,"row":8,"ac":160.5,"v":[189,218,236,291,353,468,564,640,674,688,679,659,629,547,487,390,292,251,229,211]},{"i":"F130","c":1,"col":9,"row":8,"ac":162.8,"v":[199,220,247,316,395,500,592,666,676,729,704,688,650,544,427,334,280,221,177,163]},{"i":"F131","c":1,"col":10,"row":8,"ac":162.3,"v":[201,205,257,277,383,467,583,660,692,698,673,673,634,549,437,314,282,220,218,193]},{"i":"F132","c":3,"col":11,"row":8,"ac":161.1,"v":[198,194,194,251,303,374,457,555,577,663,665,641,575,514,424,326,254,211,185,191]},{"i":"F133","c":3,"col":12,"row":8,"ac":161.1,"v":[189,215,205,288,317,396,466,524,618,656,502,478,430,427,360,302,221,186,162,143]},{"i":"F134","c":2,"col":13,"row":8,"ac":159.1,"v":[227,233,275,354,451,531,614,668,694,685,484,455,383,329,271,203,188,167,150,167]},{"i":"F135","c":1,"col":14,"row":8,"ac":160.2,"v":[194,245,281,343,425,540,614,694,718,709,581,584,519,461,397,301,250,220,195,175]},{"i":"F136","c":1,"col":0,"row":9,"ac":161.1,"v":[201,226,270,356,425,524,654,705,727,700,697,670,614,511,438,305,268,190,171,186]},{"i":"F137","c":0,"col":1,"row":9,"ac":158.1,"v":[188,226,252,343,411,516,580,629,650,680,688,659,605,548,467,383,312,245,212,185]},{"i":"F138","c":0,"col":2,"row":9,"ac":161.5,"v":[205,212,245,325,403,510,565,645,655,632,633,619,575,501,409,344,272,230,191,155]},{"i":"F139","c":0,"col":3,"row":9,"ac":162.0,"v":[181,204,240,278,322,434,496,551,588,644,647,603,568,511,417,352,285,220,194,165]},{"i":"F140","c":0,"col":4,"row":9,"ac":162.3,"v":[197,246,258,317,385,453,554,581,591,600,557,485,394,312,245,204,178,145,141,142]},{"i":"F141","c":1,"col":5,"row":9,"ac":160.6,"v":[183,236,250,285,387,488,565,656,661,714,693,698,675,585,463,348,296,241,192,154]},{"i":"F142","c":0,"col":6,"row":9,"ac":161.5,"v":[162,198,243,293,343,429,506,626,662,689,692,681,647,567,500,397,315,270,201,198]},{"i":"F143","c":0,"col":7,"row":9,"ac":155.2,"v":[170,221,248,301,384,474,560,650,671,697,693,680,642,547,466,384,319,255,205,173]},{"i":"F144","c":0,"col":8,"row":9,"ac":160.3,"v":[216,192,231,258,373,439,514,612,685,718,693,686,630,565,474,409,301,228,203,188]},{"i":"F145","c":0,"col":9,"row":9,"ac":158.0,"v":[186,217,227,275,373,451,506,617,684,725,721,700,670,605,520,396,326,245,238,191]},{"i":"F146","c":3,"col":10,"row":9,"ac":158.6,"v":[189,201,242,273,309,408,480,560,641,679,687,653,609,504,427,321,257,226,191,188]},{"i":"F147","c":3,"col":11,"row":9,"ac":160.6,"v":[176,193,206,241,292,339,421,504,586,635,664,642,565,490,401,306,209,233,196,184]},{"i":"F148","c":3,"col":12,"row":9,"ac":156.4,"v":[174,197,220,259,296,356,445,534,603,634,657,639,623,528,434,315,266,237,179,182]},{"i":"F149","c":3,"col":13,"row":9,"ac":165.0,"v":[197,192,225,243,314,360,457,532,626,675,683,709,632,547,453,330,255,215,212,172]},{"i":"F150","c":1,"col":14,"row":9,"ac":161.0,"v":[197,212,257,317,425,514,615,692,721,720,494,515,483,415,340,271,230,192,152,138]}],"creek":[[0,5.0],[2.5,4.4],[5.0,4.9],[7.5,3.9],[10,4.2],[12,3.4]],"chk":{"flag":100,"med":[[192.0,191,200.5,193],[205.5,216,225.5,197],[238.0,253,274.0,213],[286.0,317,332.0,251],[371.0,396,421.5,303],[451.0,500,516.5,360],[532.0,584,589.0,445],[607.5,660,639.0,509],[652.5,683,663.5,581],[687.0,687,661.5,617],[637.5,668,637.0,558],[617.0,657,581.0,532],[590.5,614,502.0,494],[526.0,524,397.0,476],[459.5,428,315.5,379],[376.0,327,249.0,302],[294.5,260,198.5,246],[237.5,213,174.5,203],[198.0,189,173.0,179],[183.0,176,164.0,171]],"flagged":[0,0,0,4,19,22,21,21,14,18,24,23,21,18,11,7,4,0,0,0],"acres":[0,0,0,634.7,3042.4,3518.8,3358.9,3360.0,2246.6,2878.2,3831.2,3674.8,3356.1,2877.4,1755.4,1119.8,641.8,0,0,0],"nbr":[0,0,0,2,19,21,20,21,14,15,22,19,18,13,7,4,2,0,0,0]}};
+if(!D){return;}
+var $=function(id){return document.getElementById(id);};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+var fmt=function(n,d){d=d||0;return Number(n).toLocaleString("en-CA",{minimumFractionDigits:d,maximumFractionDigits:d});};
+var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+var F=D.fields, NF=F.length, NW=D.nw, CR=D.crops, CELL=D.cell, FLAG=D.chk.flag;
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"];
+function wkDate(w){var d=new Date(Date.UTC(2026,0,1+D.day0-1+7*w));return MON[d.getUTCMonth()]+" "+d.getUTCDate();}
+
+/*CALC-START*/
+function median(a){var s=a.slice().sort(function(x,y){return x-y;}),n=s.length;return n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2;}
+function pct(a,p){var s=a.slice().sort(function(x,y){return x-y;});return s[Math.floor(p*(s.length-1))];}
+function cropMedians(F,w){var m=[];for(var k=0;k<4;k++){var a=[];for(var j=0;j<F.length;j++)if(F[j].c===k)a.push(F[j].v[w]);m.push(median(a));}return m;}
+function flagged(F,w,on,flag){var m=cropMedians(F,w),out=[];for(var j=0;j<F.length;j++){if(on[F[j].c]&&F[j].v[w]<=m[F[j].c]-flag)out.push(j);}return out;}
+function neighbours(F,fl){var idx={},s={},j,n=0;for(j=0;j<F.length;j++)idx[F[j].col+","+F[j].row]=j;fl.forEach(function(q){s[q]=1;});
+  fl.forEach(function(q){var c=F[q].col,r=F[q].row,hit=false;for(var dc=-1;dc<=1;dc++)for(var dr=-1;dr<=1;dr++){if(!dc&&!dr)continue;var k=idx[(c+dc)+","+(r+dr)];if(k!==undefined&&s[k])hit=true;}if(hit)n++;});return n;}
+/*CALC-END*/
+
+var state={on:[1,1,1,1],layer:"ndvi",w:11,sel:-1,hover:-1,timer:null};
+var LAY=[["ndvi","Greenness"],["diff","Against peers"],["crop","Crop"]];
+var NDL=["Under 0.25","0.25 to 0.40","0.40 to 0.55","0.55 to 0.70","0.70 or more"];
+var DFL=["0.15 or more behind","0.10 to 0.15 behind","0.04 to 0.10 behind","Within 0.04","0.04 to 0.10 ahead","0.10 or more ahead"];
+function ndviBin(v){return v<250?0:v<400?1:v<550?2:v<700?3:4;}
+function diffBin(d){return d<=-150?0:d<=-100?1:d<=-40?2:d<40?3:d<100?4:5;}
+
+function build(){
+  $("chips").innerHTML=CR.map(function(c,i){var n=F.filter(function(f){return f.c===i;}).length;return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="'+!!state.on[i]+'"><i class="dot" style="background:var(--k'+(i+1)+');margin:0"></i>'+c+' <b>'+n+'</b></button>';}).join("");
+  $("segLayer").innerHTML=LAY.map(function(l){return '<button type="button" data-l="'+l[0]+'" aria-pressed="'+(state.layer===l[0])+'">'+l[1]+'</button>';}).join("");
+  $("rngW").value=state.w;
+}
+$("chips").addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;var i=+b.dataset.i;if(state.on[i]&&state.on.reduce(function(a,v){return a+v;},0)===1)return;state.on[i]=state.on[i]?0:1;
+  if(state.sel>=0&&!state.on[F[state.sel].c])state.sel=-1;build();renderAll();});
+$("segLayer").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;state.layer=b.dataset.l;build();renderAll();});
+var pend=false;$("rngW").addEventListener("input",function(e){state.w=+e.target.value;stop();if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;renderAll();});});
+function stop(){if(state.timer){clearInterval(state.timer);state.timer=null;}$("play").textContent="Play";}
+$("play").addEventListener("click",function(){
+  if(state.timer){stop();return;}
+  if(state.w>=NW-1)state.w=0;$("play").textContent="Pause";build();$("play").textContent="Pause";renderAll();
+  state.timer=setInterval(function(){if(state.w>=NW-1){stop();return;}state.w++;$("rngW").value=state.w;renderAll();},650);
+});
+
+var R=null;
+function analyse(){
+  var w=state.w,med=cropMedians(F,w),fl=flagged(F,w,state.on,FLAG),sel=[],a,n=0,ac=0,s=[],acF=0;
+  for(var j=0;j<NF;j++){a=F[j];if(!state.on[a.c])continue;sel.push(j);ac+=a.ac;s.push(a.v[w]);}
+  fl.forEach(function(j){acF+=F[j].ac;});
+  R={w:w,med:med,fl:fl,sel:sel,ac:ac,acF:acF,medAll:median(s),nbr:neighbours(F,fl)};
+}
+
+var cvs=$("map"),ctx=cvs.getContext("2d"),NARROW=false;
+function colour(a){
+  if(state.layer==="crop")return css("--k"+(a.c+1));
+  var v=a.v[state.w];
+  if(state.layer==="ndvi")return css("--g"+ndviBin(v));
+  return css("--d"+diffBin(v-R.med[a.c]));
+}
+function draw(){
+  var w=cvs.clientWidth||700,dpr=window.devicePixelRatio||1,h=Math.round(w*D.h/D.w);NARROW=w<560;
+  cvs.width=Math.round(w*dpr);cvs.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+  var k=w/D.w,ink=css("--ink");
+  ctx.fillStyle=css("--plane");ctx.fillRect(0,0,w,h);
+  var gap=NARROW?1:1.5;
+  for(var i=0;i<NF;i++){var a=F[i],on=!!state.on[a.c];ctx.globalAlpha=on?1:0.12;ctx.fillStyle=colour(a);
+    ctx.fillRect(a.col*CELL*k+gap,a.row*CELL*k+gap,CELL*k-2*gap,CELL*k-2*gap);ctx.globalAlpha=1;}
+  ctx.beginPath();D.creek.forEach(function(p,i){i?ctx.lineTo(p[0]*k,p[1]*k):ctx.moveTo(p[0]*k,p[1]*k);});ctx.strokeStyle=css("--water");ctx.globalAlpha=0.85;ctx.lineWidth=NARROW?3:5;ctx.lineJoin="round";ctx.stroke();ctx.globalAlpha=1;
+  if(state.layer!=="crop"||true){R.fl.forEach(function(j){var a=F[j];ctx.strokeStyle=ink;ctx.lineWidth=NARROW?1.2:1.8;ctx.strokeRect(a.col*CELL*k+gap+1,a.row*CELL*k+gap+1,CELL*k-2*gap-2,CELL*k-2*gap-2);});}
+  [state.sel,state.hover].forEach(function(j,q){if(j<0)return;var a=F[j];ctx.strokeStyle=q===0?css("--c1"):ink;ctx.lineWidth=q===0?4:2.5;ctx.strokeRect(a.col*CELL*k+gap+2,a.row*CELL*k+gap+2,CELL*k-2*gap-4,CELL*k-2*gap-4);});
+}
+function legend(){
+  var items=state.layer==="ndvi"?NDL.map(function(t,i){return '<span><i class="sq" style="background:var(--g'+i+')"></i>'+t+'</span>';}).join(""):
+            state.layer==="diff"?DFL.map(function(t,i){return '<span><i class="sq" style="background:var(--d'+i+')"></i>'+t+'</span>';}).join(""):
+            CR.map(function(t,i){return '<span><i class="sq" style="background:var(--k'+(i+1)+')"></i>'+t+'</span>';}).join("");
+  $("legend").innerHTML=items+'<span><i class="sq" style="background:transparent;border:2px solid var(--ink)"></i>Behind peers by 0.10 or more</span>';
+}
+function hit(e){var rc=cvs.getBoundingClientRect(),c=Math.floor((e.clientX-rc.left)/rc.width*D.cols),r=Math.floor((e.clientY-rc.top)/rc.height*D.rows);
+  if(c<0||r<0||c>=D.cols||r>=D.rows)return null;var j=r*D.cols+c;if(!F[j]||F[j].col!==c||F[j].row!==r||!state.on[F[j].c])return null;return {i:j,x:e.clientX-rc.left,y:e.clientY-rc.top,w:rc.width};}
+function dTxt(a){var d=(a.v[state.w]-R.med[a.c])/1000;return (d>=0?"+":"")+d.toFixed(2);}
+function info(a){var v=a.v[state.w];return "<b>"+a.i+"</b> · "+CR[a.c]+" · "+fmt(a.ac,0)+" acres · greenness <b>"+(v/1000).toFixed(2)+"</b> · "+dTxt(a)+" against the "+CR[a.c].toLowerCase()+" median this week"+(v<=R.med[a.c]-FLAG?" · <b>behind peers</b>":"");}
+function readout(){var k=state.hover>=0?state.hover:state.sel;$("readout").innerHTML=k>=0?info(F[k]):"Move over the map or select a field to read it.";}
+cvs.addEventListener("mousemove",function(e){var h=hit(e),tip=$("tip"),old=state.hover;state.hover=h?h.i:-1;
+  if(!h){tip.hidden=true;}else{var a=F[h.i];tip.innerHTML="<b>"+a.i+"</b> · "+CR[a.c]+"<br>"+(a.v[state.w]/1000).toFixed(2)+" ("+dTxt(a)+" vs peers)";tip.hidden=false;tip.style.left=Math.min(h.x+12,h.w-200)+"px";tip.style.top=Math.max(4,h.y-10)+"px";}
+  readout();if(old!==state.hover)draw();});
+cvs.addEventListener("mouseleave",function(){$("tip").hidden=true;if(state.hover!==-1){state.hover=-1;draw();}readout();});
+cvs.addEventListener("click",function(e){var h=hit(e);state.sel=h?h.i:-1;renderRows();readout();draw();renderCharts();});
+
+function renderWeek(){$("wk").innerHTML="<b>Week of "+wkDate(state.w)+"</b> · week "+(state.w+1)+" of "+NW;
+  $("mapTitle").textContent=state.layer==="ndvi"?"Greenness by field":state.layer==="diff"?"Difference from the crop median":"Crop by field";}
+function renderKpis(){
+  var n=R.sel.length,nf=R.fl.length,share=n?nf/n*100:0;
+  var T=[["Fields",fmt(n),"",fmt(R.ac,0)+" acres in the selected crops"],
+         ["Median greenness",(R.medAll/1000).toFixed(2),"","week of "+wkDate(state.w)],
+         ["Behind peers",fmt(nf),"","fields · "+fmt(share,0)+"% of fields"],
+         ["Acres behind",fmt(R.acF,0),"","acres · "+fmt(R.ac?R.acF/R.ac*100:0,0)+"% of acres"],
+         ["Shared cause",nf?fmt(R.nbr/nf*100,0):"–",nf?"%":"",nf?"of flagged fields have a flagged neighbour":"no flagged fields this week"]];
+  $("kpis").innerHTML=T.map(function(t){return '<div class="kpi"><div class="l">'+t[0]+'</div><div class="v">'+t[1]+(t[2]?'<small>'+t[2]+'</small>':'')+'</div><div class="s">'+esc(t[3])+'</div></div>';}).join("");
+}
+function renderRead(){
+  var nf=R.fl.length,n=R.sel.length,li=[],h;
+  var pk=0,pw=0;for(var w=0;w<NW;w++){var f2=flagged(F,w,state.on,FLAG),ac=0;f2.forEach(function(j){ac+=F[j].ac;});if(ac>pk){pk=ac;pw=w;}}
+  if(nf===0){h="No fields are behind their peers this week";li.push("<li>Every field in the selected crops is within 0.10 of the median for its crop in the week of <b>"+wkDate(state.w)+"</b>.</li>");}
+  else{
+    var share=R.nbr/nf;
+    h=share>=0.6?"Behind-peer fields are clustered":share>=0.3?"A mix of clustered and isolated fields":"Behind-peer fields are scattered";
+    li.push("<li><b>"+fmt(nf)+"</b> of "+fmt(n)+" fields ("+fmt(R.acF,0)+" acres) are 0.10 or more below their crop's median in the week of <b>"+wkDate(state.w)+"</b>.</li>");
+    li.push("<li><b>"+fmt(share*100,0)+"%</b> of them touch another flagged field. "+(share>=0.6?"That pattern usually means a shared cause such as hail, a dry soil patch or a wet spring. Check the weather record and soil map first.":share>=0.3?"Some share a cause and some stand alone. Look at the clusters first, then the isolated fields.":"That points to field-level causes such as seeding date, disease or management. Scouting each field is the next step.")+"</li>");
+  }
+  li.push("<li>The widest gap in the selected crops is the week of <b>"+wkDate(pw)+"</b>, with <b>"+fmt(pk,0)+"</b> acres behind peers.</li>");
+  li.push("<li>Flags compare fields with the same crop only, so a canola field is never marked down for being less green than wheat.</li>");
+  $("read").innerHTML='<h3>'+h+'</h3><ul>'+li.join("")+'</ul>';
+}
+function renderRows(){
+  var top=R.sel.slice().sort(function(x,y){return (F[x].v[state.w]-R.med[F[x].c])-(F[y].v[state.w]-R.med[F[y].c])||x-y;}).slice(0,10);
+  $("rows").innerHTML=top.map(function(k){var a=F[k],d=a.v[state.w]-R.med[a.c];
+    return '<tr class="tr'+(state.sel===k?' sel':'')+'" tabindex="0" data-k="'+k+'"><td class="nw">'+a.i+'</td><td class="nw"><i class="dot" style="background:var(--k'+(a.c+1)+')"></i>'+CR[a.c]+'</td><td class="r">'+(a.v[state.w]/1000).toFixed(2)+'</td><td class="r">'+(d>0?"+":"")+(d/1000).toFixed(2)+'</td><td class="r nx">'+fmt(a.ac,0)+'</td></tr>';}).join("");
+}
+function pick(e){var tr=e.target.closest(".tr");if(!tr)return;if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;e.preventDefault();var k=+tr.dataset.k;state.sel=state.sel===k?-1:k;renderRows();readout();draw();renderCharts();}
+$("rows").addEventListener("click",pick);$("rows").addEventListener("keydown",pick);
+
+var charts={};
+function mk(id,cfg){if(typeof Chart==="undefined"){var b=$(id).parentNode;if(!b.dataset.err){b.dataset.err=1;b.insertAdjacentHTML("beforeend",'<p class="note">The chart library could not load. Check your connection and reload.</p>');}return;}
+  if(charts[id])charts[id].destroy();charts[id]=new Chart($(id),cfg);}
+function renderCharts(){
+  if(typeof Chart==="undefined"){["c1","c2","c3"].forEach(function(i){mk(i,{});});return;}
+  Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';Chart.defaults.font.size=12;Chart.defaults.color=css("--ink2");
+  var grid=css("--grid"),c1=css("--c1"),ink=css("--ink"),ink2=css("--ink2"),labs=[];for(var w=0;w<NW;w++)labs.push(wkDate(w));
+  var xs={grid:{display:false},ticks:{maxTicksLimit:7,maxRotation:0}};
+  var ys=function(t,max){return {beginAtZero:true,max:max,grid:{color:grid},title:{display:true,text:t}};};
+  // c1 selected field
+  if(state.sel>=0){
+    var a=F[state.sel],cm=[],lo=[],hi=[];
+    for(var w2=0;w2<NW;w2++){var vs=[];F.forEach(function(f){if(f.c===a.c)vs.push(f.v[w2]);});cm.push(median(vs)/1000);lo.push(pct(vs,0.25)/1000);hi.push(pct(vs,0.75)/1000);}
+    $("fTitle").textContent=a.i+" · "+CR[a.c];$("fNote").textContent=fmt(a.ac,0)+" acres. The shaded band is the middle half of fields growing the same crop.";
+    mk("c1",{type:"line",data:{labels:labs,datasets:[
+      {label:"Peer 25th percentile",data:lo,borderWidth:0,pointRadius:0,backgroundColor:"rgba(137,135,129,.22)",fill:"+1"},
+      {label:"Peer 75th percentile",data:hi,borderWidth:0,pointRadius:0,fill:false},
+      {label:"Crop median",data:cm,borderColor:ink2,backgroundColor:ink2,borderWidth:2,borderDash:[6,4],pointRadius:0},
+      {label:a.i,data:a.v.map(function(v){return v/1000;}),borderColor:c1,backgroundColor:c1,borderWidth:3,pointRadius:a.v.map(function(v,i){return i===state.w?6:0;}),pointHoverRadius:4,tension:0.25}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},scales:{x:xs,y:ys("Greenness (0 to 1)",1)},plugins:{legend:{position:"bottom",labels:{boxWidth:14,boxHeight:3,filter:function(it){return it.text.indexOf("percentile")<0;}}}}}});
+  }else{$("fTitle").textContent="Selected field";$("fNote").textContent="Select a field on the map to compare it with its crop.";if(charts.c1){charts.c1.destroy();delete charts.c1;}}
+  // c2 flagged acres by week
+  var acs=[];for(var w3=0;w3<NW;w3++){var ac=0;flagged(F,w3,state.on,FLAG).forEach(function(j){ac+=F[j].ac;});acs.push(Math.round(ac));}
+  mk("c2",{type:"bar",data:{labels:labs,datasets:[{label:"Acres behind peers",data:acs,backgroundColor:acs.map(function(v,i){return i===state.w?css("--c2"):css("--axis");}),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,scales:{x:xs,y:ys("acres")},plugins:{legend:{display:false}}}});
+  // c3 median by crop
+  var ds=[];for(var k=0;k<4;k++){if(!state.on[k])continue;ds.push({label:CR[k],data:D.chk.med.map(function(m,i){return cropMedians(F,i)[k]/1000;}),borderColor:css("--k"+(k+1)),backgroundColor:css("--k"+(k+1)),borderWidth:2.5,pointRadius:labs.map(function(l,i){return i===state.w?6:0;}),pointHoverRadius:4,tension:0.25});}
+  mk("c3",{type:"line",data:{labels:labs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},scales:{x:xs,y:ys("Greenness (0 to 1)",1)},plugins:{legend:{position:"bottom",labels:{boxWidth:14,boxHeight:3}}}}});
+}
+var medCache=null;
+function renderAll(){
+  analyse();renderWeek();renderKpis();legend();draw();readout();renderRead();renderRows();renderCharts();
+}
+var rt=null;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(draw,120);});
+if(window.matchMedia){try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){renderAll();});}catch(e){}}
+build();renderAll();
+})();
+</script>
+</body>
+</html>
